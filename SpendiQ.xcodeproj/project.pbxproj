@@ -1,0 +1,710 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		937A9EC62CA4C42400BD3349 /* SpendiQApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EC52CA4C42400BD3349 /* SpendiQApp.swift */; };
+		937A9EC82CA4C42400BD3349 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EC72CA4C42400BD3349 /* ContentView.swift */; };
+		937A9ECA2CA4C42500BD3349 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 937A9EC92CA4C42500BD3349 /* Assets.xcassets */; };
+		937A9ECE2CA4C42500BD3349 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 937A9ECD2CA4C42500BD3349 /* Preview Assets.xcassets */; };
+		937A9ED82CA4C42500BD3349 /* SpendiQTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9ED72CA4C42500BD3349 /* SpendiQTests.swift */; };
+		937A9EE22CA4C42500BD3349 /* SpendiQUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EE12CA4C42500BD3349 /* SpendiQUITests.swift */; };
+		937A9EE42CA4C42500BD3349 /* SpendiQUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EE32CA4C42500BD3349 /* SpendiQUITestsLaunchTests.swift */; };
+		937A9EF72CA4C51800BD3349 /* SpecialOffersAlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EF62CA4C51800BD3349 /* SpecialOffersAlertView.swift */; };
+		937A9EF92CA4C55500BD3349 /* MainMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EF82CA4C55500BD3349 /* MainMenuView.swift */; };
+		937A9EFB2CA4C56F00BD3349 /* SpecialOffersListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EFA2CA4C56F00BD3349 /* SpecialOffersListView.swift */; };
+		937A9EFD2CA4C5D900BD3349 /* OfferDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EFC2CA4C5D900BD3349 /* OfferDetailView.swift */; };
+		937A9EFF2CA4C7E500BD3349 /* OfferModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9EFE2CA4C7E500BD3349 /* OfferModel.swift */; };
+		937A9F012CA4C84E00BD3349 /* OfferBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9F002CA4C84E00BD3349 /* OfferBubbleView.swift */; };
+		937A9F032CA4C91400BD3349 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9F022CA4C91400BD3349 /* LocationManager.swift */; };
+		937A9F052CA4C95D00BD3349 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9F042CA4C95D00BD3349 /* DataService.swift */; };
+		937A9F072CA4CA7600BD3349 /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9F062CA4CA7600BD3349 /* UserModel.swift */; };
+		937A9F092CA4CA8D00BD3349 /* ShopModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9F082CA4CA8D00BD3349 /* ShopModel.swift */; };
+		937A9F0B2CA4CADE00BD3349 /* SpecialOffersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9F0A2CA4CADE00BD3349 /* SpecialOffersViewModel.swift */; };
+		937A9F0D2CA4CAED00BD3349 /* OfferDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937A9F0C2CA4CAED00BD3349 /* OfferDetailViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		937A9ED42CA4C42500BD3349 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 937A9EBA2CA4C42400BD3349 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 937A9EC12CA4C42400BD3349;
+			remoteInfo = SpendiQ;
+		};
+		937A9EDE2CA4C42500BD3349 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 937A9EBA2CA4C42400BD3349 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 937A9EC12CA4C42400BD3349;
+			remoteInfo = SpendiQ;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		937A9EC22CA4C42400BD3349 /* SpendiQ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpendiQ.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		937A9EC52CA4C42400BD3349 /* SpendiQApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendiQApp.swift; sourceTree = "<group>"; };
+		937A9EC72CA4C42400BD3349 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		937A9EC92CA4C42500BD3349 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		937A9ECB2CA4C42500BD3349 /* SpendiQ.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SpendiQ.entitlements; sourceTree = "<group>"; };
+		937A9ECD2CA4C42500BD3349 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		937A9ED32CA4C42500BD3349 /* SpendiQTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendiQTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		937A9ED72CA4C42500BD3349 /* SpendiQTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendiQTests.swift; sourceTree = "<group>"; };
+		937A9EDD2CA4C42500BD3349 /* SpendiQUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendiQUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		937A9EE12CA4C42500BD3349 /* SpendiQUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendiQUITests.swift; sourceTree = "<group>"; };
+		937A9EE32CA4C42500BD3349 /* SpendiQUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendiQUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		937A9EF62CA4C51800BD3349 /* SpecialOffersAlertView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialOffersAlertView.swift; sourceTree = "<group>"; };
+		937A9EF82CA4C55500BD3349 /* MainMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuView.swift; sourceTree = "<group>"; };
+		937A9EFA2CA4C56F00BD3349 /* SpecialOffersListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialOffersListView.swift; sourceTree = "<group>"; };
+		937A9EFC2CA4C5D900BD3349 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
+		937A9EFE2CA4C7E500BD3349 /* OfferModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferModel.swift; sourceTree = "<group>"; };
+		937A9F002CA4C84E00BD3349 /* OfferBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferBubbleView.swift; sourceTree = "<group>"; };
+		937A9F022CA4C91400BD3349 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		937A9F042CA4C95D00BD3349 /* DataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
+		937A9F062CA4CA7600BD3349 /* UserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModel.swift; sourceTree = "<group>"; };
+		937A9F082CA4CA8D00BD3349 /* ShopModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopModel.swift; sourceTree = "<group>"; };
+		937A9F0A2CA4CADE00BD3349 /* SpecialOffersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialOffersViewModel.swift; sourceTree = "<group>"; };
+		937A9F0C2CA4CAED00BD3349 /* OfferDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailViewModel.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		937A9EBF2CA4C42400BD3349 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		937A9ED02CA4C42500BD3349 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		937A9EDA2CA4C42500BD3349 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		937A9EB92CA4C42400BD3349 = {
+			isa = PBXGroup;
+			children = (
+				937A9EC42CA4C42400BD3349 /* SpendiQ */,
+				937A9ED62CA4C42500BD3349 /* SpendiQTests */,
+				937A9EE02CA4C42500BD3349 /* SpendiQUITests */,
+				937A9EC32CA4C42400BD3349 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		937A9EC32CA4C42400BD3349 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				937A9EC22CA4C42400BD3349 /* SpendiQ.app */,
+				937A9ED32CA4C42500BD3349 /* SpendiQTests.xctest */,
+				937A9EDD2CA4C42500BD3349 /* SpendiQUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		937A9EC42CA4C42400BD3349 /* SpendiQ */ = {
+			isa = PBXGroup;
+			children = (
+				937A9EF52CA4C4CD00BD3349 /* Helpers */,
+				937A9EF42CA4C4BD00BD3349 /* Resources */,
+				937A9EF32CA4C4B400BD3349 /* Services */,
+				937A9EF22CA4C4A400BD3349 /* ViewModels */,
+				937A9EF12CA4C49400BD3349 /* Models */,
+				937A9EF02CA4C48900BD3349 /* Views */,
+				937A9EC52CA4C42400BD3349 /* SpendiQApp.swift */,
+				937A9EC72CA4C42400BD3349 /* ContentView.swift */,
+				937A9EC92CA4C42500BD3349 /* Assets.xcassets */,
+				937A9ECB2CA4C42500BD3349 /* SpendiQ.entitlements */,
+				937A9ECC2CA4C42500BD3349 /* Preview Content */,
+			);
+			path = SpendiQ;
+			sourceTree = "<group>";
+		};
+		937A9ECC2CA4C42500BD3349 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				937A9ECD2CA4C42500BD3349 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		937A9ED62CA4C42500BD3349 /* SpendiQTests */ = {
+			isa = PBXGroup;
+			children = (
+				937A9ED72CA4C42500BD3349 /* SpendiQTests.swift */,
+			);
+			path = SpendiQTests;
+			sourceTree = "<group>";
+		};
+		937A9EE02CA4C42500BD3349 /* SpendiQUITests */ = {
+			isa = PBXGroup;
+			children = (
+				937A9EE12CA4C42500BD3349 /* SpendiQUITests.swift */,
+				937A9EE32CA4C42500BD3349 /* SpendiQUITestsLaunchTests.swift */,
+			);
+			path = SpendiQUITests;
+			sourceTree = "<group>";
+		};
+		937A9EF02CA4C48900BD3349 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				937A9EF62CA4C51800BD3349 /* SpecialOffersAlertView.swift */,
+				937A9EF82CA4C55500BD3349 /* MainMenuView.swift */,
+				937A9EFA2CA4C56F00BD3349 /* SpecialOffersListView.swift */,
+				937A9EFC2CA4C5D900BD3349 /* OfferDetailView.swift */,
+				937A9F002CA4C84E00BD3349 /* OfferBubbleView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		937A9EF12CA4C49400BD3349 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				937A9EFE2CA4C7E500BD3349 /* OfferModel.swift */,
+				937A9F062CA4CA7600BD3349 /* UserModel.swift */,
+				937A9F082CA4CA8D00BD3349 /* ShopModel.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		937A9EF22CA4C4A400BD3349 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				937A9F0A2CA4CADE00BD3349 /* SpecialOffersViewModel.swift */,
+				937A9F0C2CA4CAED00BD3349 /* OfferDetailViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		937A9EF32CA4C4B400BD3349 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				937A9F022CA4C91400BD3349 /* LocationManager.swift */,
+				937A9F042CA4C95D00BD3349 /* DataService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		937A9EF42CA4C4BD00BD3349 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		937A9EF52CA4C4CD00BD3349 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		937A9EC12CA4C42400BD3349 /* SpendiQ */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 937A9EE72CA4C42500BD3349 /* Build configuration list for PBXNativeTarget "SpendiQ" */;
+			buildPhases = (
+				937A9EBE2CA4C42400BD3349 /* Sources */,
+				937A9EBF2CA4C42400BD3349 /* Frameworks */,
+				937A9EC02CA4C42400BD3349 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SpendiQ;
+			productName = SpendiQ;
+			productReference = 937A9EC22CA4C42400BD3349 /* SpendiQ.app */;
+			productType = "com.apple.product-type.application";
+		};
+		937A9ED22CA4C42500BD3349 /* SpendiQTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 937A9EEA2CA4C42500BD3349 /* Build configuration list for PBXNativeTarget "SpendiQTests" */;
+			buildPhases = (
+				937A9ECF2CA4C42500BD3349 /* Sources */,
+				937A9ED02CA4C42500BD3349 /* Frameworks */,
+				937A9ED12CA4C42500BD3349 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				937A9ED52CA4C42500BD3349 /* PBXTargetDependency */,
+			);
+			name = SpendiQTests;
+			productName = SpendiQTests;
+			productReference = 937A9ED32CA4C42500BD3349 /* SpendiQTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		937A9EDC2CA4C42500BD3349 /* SpendiQUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 937A9EED2CA4C42500BD3349 /* Build configuration list for PBXNativeTarget "SpendiQUITests" */;
+			buildPhases = (
+				937A9ED92CA4C42500BD3349 /* Sources */,
+				937A9EDA2CA4C42500BD3349 /* Frameworks */,
+				937A9EDB2CA4C42500BD3349 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				937A9EDF2CA4C42500BD3349 /* PBXTargetDependency */,
+			);
+			name = SpendiQUITests;
+			productName = SpendiQUITests;
+			productReference = 937A9EDD2CA4C42500BD3349 /* SpendiQUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		937A9EBA2CA4C42400BD3349 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					937A9EC12CA4C42400BD3349 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+					937A9ED22CA4C42500BD3349 = {
+						CreatedOnToolsVersion = 15.2;
+						TestTargetID = 937A9EC12CA4C42400BD3349;
+					};
+					937A9EDC2CA4C42500BD3349 = {
+						CreatedOnToolsVersion = 15.2;
+						TestTargetID = 937A9EC12CA4C42400BD3349;
+					};
+				};
+			};
+			buildConfigurationList = 937A9EBD2CA4C42400BD3349 /* Build configuration list for PBXProject "SpendiQ" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 937A9EB92CA4C42400BD3349;
+			productRefGroup = 937A9EC32CA4C42400BD3349 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				937A9EC12CA4C42400BD3349 /* SpendiQ */,
+				937A9ED22CA4C42500BD3349 /* SpendiQTests */,
+				937A9EDC2CA4C42500BD3349 /* SpendiQUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		937A9EC02CA4C42400BD3349 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				937A9ECE2CA4C42500BD3349 /* Preview Assets.xcassets in Resources */,
+				937A9ECA2CA4C42500BD3349 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		937A9ED12CA4C42500BD3349 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		937A9EDB2CA4C42500BD3349 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		937A9EBE2CA4C42400BD3349 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				937A9EFD2CA4C5D900BD3349 /* OfferDetailView.swift in Sources */,
+				937A9F012CA4C84E00BD3349 /* OfferBubbleView.swift in Sources */,
+				937A9EC82CA4C42400BD3349 /* ContentView.swift in Sources */,
+				937A9EF72CA4C51800BD3349 /* SpecialOffersAlertView.swift in Sources */,
+				937A9EF92CA4C55500BD3349 /* MainMenuView.swift in Sources */,
+				937A9F092CA4CA8D00BD3349 /* ShopModel.swift in Sources */,
+				937A9EFF2CA4C7E500BD3349 /* OfferModel.swift in Sources */,
+				937A9F0B2CA4CADE00BD3349 /* SpecialOffersViewModel.swift in Sources */,
+				937A9EC62CA4C42400BD3349 /* SpendiQApp.swift in Sources */,
+				937A9EFB2CA4C56F00BD3349 /* SpecialOffersListView.swift in Sources */,
+				937A9F032CA4C91400BD3349 /* LocationManager.swift in Sources */,
+				937A9F052CA4C95D00BD3349 /* DataService.swift in Sources */,
+				937A9F0D2CA4CAED00BD3349 /* OfferDetailViewModel.swift in Sources */,
+				937A9F072CA4CA7600BD3349 /* UserModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		937A9ECF2CA4C42500BD3349 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				937A9ED82CA4C42500BD3349 /* SpendiQTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		937A9ED92CA4C42500BD3349 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				937A9EE22CA4C42500BD3349 /* SpendiQUITests.swift in Sources */,
+				937A9EE42CA4C42500BD3349 /* SpendiQUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		937A9ED52CA4C42500BD3349 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 937A9EC12CA4C42400BD3349 /* SpendiQ */;
+			targetProxy = 937A9ED42CA4C42500BD3349 /* PBXContainerItemProxy */;
+		};
+		937A9EDF2CA4C42500BD3349 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 937A9EC12CA4C42400BD3349 /* SpendiQ */;
+			targetProxy = 937A9EDE2CA4C42500BD3349 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		937A9EE52CA4C42500BD3349 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		937A9EE62CA4C42500BD3349 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		937A9EE82CA4C42500BD3349 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SpendiQ/SpendiQ.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SpendiQ/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Team34.Swift.SpendiQ;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		937A9EE92CA4C42500BD3349 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SpendiQ/SpendiQ.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SpendiQ/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Team34.Swift.SpendiQ;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		937A9EEB2CA4C42500BD3349 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Team34.Swift.SpendiQTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpendiQ.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SpendiQ";
+			};
+			name = Debug;
+		};
+		937A9EEC2CA4C42500BD3349 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Team34.Swift.SpendiQTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpendiQ.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SpendiQ";
+			};
+			name = Release;
+		};
+		937A9EEE2CA4C42500BD3349 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Team34.Swift.SpendiQUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SpendiQ;
+			};
+			name = Debug;
+		};
+		937A9EEF2CA4C42500BD3349 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Team34.Swift.SpendiQUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SpendiQ;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		937A9EBD2CA4C42400BD3349 /* Build configuration list for PBXProject "SpendiQ" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				937A9EE52CA4C42500BD3349 /* Debug */,
+				937A9EE62CA4C42500BD3349 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		937A9EE72CA4C42500BD3349 /* Build configuration list for PBXNativeTarget "SpendiQ" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				937A9EE82CA4C42500BD3349 /* Debug */,
+				937A9EE92CA4C42500BD3349 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		937A9EEA2CA4C42500BD3349 /* Build configuration list for PBXNativeTarget "SpendiQTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				937A9EEB2CA4C42500BD3349 /* Debug */,
+				937A9EEC2CA4C42500BD3349 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		937A9EED2CA4C42500BD3349 /* Build configuration list for PBXNativeTarget "SpendiQUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				937A9EEE2CA4C42500BD3349 /* Debug */,
+				937A9EEF2CA4C42500BD3349 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 937A9EBA2CA4C42400BD3349 /* Project object */;
+}
