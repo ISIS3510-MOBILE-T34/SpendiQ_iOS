@@ -12,14 +12,19 @@ To-Do: Add the other Files corresponding to your views (UI) implementation accor
 
 ## Folders Tree View inside SpendiQ Main Folder
 
-SpendiQ
-│
-├── Models
-├── ViewModels
-├── Views
-├── Services
-├── Helpers
-└── Resources
+│ SpendiQ
+ 
+. . . . . . ├ - -Models
+
+. . . . . . ├ - -ViewModels
+
+. . . . . . ├ - -Views
+
+. . . . . . ├ - -Services
+
+. . . . . . ├ - -Helpers
+
+. . . . . . └ - -Resources
 
 The SpendiQ project is organized using the Model-View-ViewModel (MVVM) architecture to ensure a clean separation of concerns and facilitate teamwork. Below is an overview of each folder and its purpose:
 
