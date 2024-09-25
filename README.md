@@ -4,7 +4,9 @@ This repository hold the development process of the iOS mobile app version of Sp
 # Branch Information
 These are the initial Folders and Files in the Swift Programming Language that make up our SpendiQ Project's initial Structure.
 The project is organized in folders for our Architecture Pattern (MVVM) plus folders for Helpers, Resources and Services. There are also folders for Logic and UI tests.
-To-Do: Add the other Files corresponding to your views (UI) implementation according to Figma
+
+To-Do: 
+- Add the other Files corresponding to your views (UI) implementation according to Figma
 - Install the Firebase library in the project to visualize the previews of the views built.
 - Integrate this commit to the main branch.
 
