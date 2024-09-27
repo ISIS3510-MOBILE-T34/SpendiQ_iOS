@@ -29,6 +29,7 @@ struct HomePage: View {
                     .foregroundColor(.primarySpendiq)
                     .fontWeight(.bold)
                 
+                
                 GraphBox(currentIndex: $currentIndex)
                     .frame(height: 264)
                     .padding(.bottom,12)
@@ -39,6 +40,9 @@ struct HomePage: View {
                 Text("Movements")
                     .font(.custom("SF Pro", size: 19))
                     .fontWeight(.regular)
+                
+                DayResume()
+                
                 
                 Spacer()
             }
