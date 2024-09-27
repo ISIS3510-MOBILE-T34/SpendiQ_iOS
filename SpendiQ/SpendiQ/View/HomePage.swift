@@ -29,6 +29,10 @@ struct HomePage: View {
                     .foregroundColor(.primarySpendiq)
                     .fontWeight(.bold)
                 
+                GraphBox(currentIndex: $currentIndex)
+                    .frame(height: 264)
+                    .padding(.bottom,12)
+                
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
