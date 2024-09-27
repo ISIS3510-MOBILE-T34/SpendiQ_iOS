@@ -33,6 +33,13 @@ struct HomePage: View {
                     .frame(height: 264)
                     .padding(.bottom,12)
                 
+                Divider()
+                    .frame(width: 361)
+                
+                Text("Movements")
+                    .font(.custom("SF Pro", size: 19))
+                    .fontWeight(.regular)
+                
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
