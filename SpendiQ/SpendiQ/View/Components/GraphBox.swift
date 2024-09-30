@@ -35,8 +35,8 @@ struct GraphBox: View {
                             }
                         }
                         .frame(width: 361, height: 264)
-                        .shadow(radius: 4)
-                        .cornerRadius(14)
+                        .cornerRadius(10)
+                        .shadow(radius: 10)
                     }
                 }
                 .padding(.horizontal, (geometry.size.width - 361) / 2)
@@ -55,7 +55,6 @@ struct GraphBox: View {
                         }
                 )
             }
-            
             HStack(spacing: 20) {
                 ForEach(timeFrames, id: \.self) { frame in
                     Button(action: {
@@ -98,7 +97,9 @@ struct GraphBox: View {
                 .lineStyle(StrokeStyle(lineWidth: 2))
             }
         }
-        .frame(width: 350, height: 160)
+        .frame(width: 350, height: 180)
+        .cornerRadius(10)
+        .padding(.bottom,30)
     }
 }
 

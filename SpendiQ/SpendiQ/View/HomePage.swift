@@ -16,9 +16,15 @@ struct HomePage: View {
                 Spacer()
                     .frame(height: 53)
                 
-                Text("Total Balance")
-                    .font(.custom("SF Pro", size: 19))
-                    .fontWeight(.regular)
+                HStack {
+                    Text("Total Balance")
+                        .font(.custom("SF Pro", size: 19))
+                        .fontWeight(.regular)
+                        .padding(.leading,86)
+                    
+                    Image(systemName: "bell.fill")
+                        .padding(.leading,50)
+                }
                 
                 Spacer()
                     .frame(height: 6)
