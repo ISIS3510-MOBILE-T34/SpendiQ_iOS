@@ -2,40 +2,98 @@ import SwiftUI
 
 struct TabBar: View {
     @Binding var selectedTab: String
+    @State private var showNewOptions = false // Controla si se muestran los botones desplegables
     
     var body: some View {
         ZStack {
-
-            Color(.tabBar)
-                .ignoresSafeArea(edges: .bottom)
-            
-            HStack(spacing: 35) {
-                Icon(IconName: "house", IconText: "Home", isSelected: selectedTab == "Home")
+            // Fondo opaco cuando los botones están desplegados
+            if showNewOptions {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .frame(height: 560)
                     .onTapGesture {
-                        selectedTab = "Home"
-                    }
-                
-                Icon(IconName: "gift", IconText: "Promos", isSelected: selectedTab == "Promos")
-                    .onTapGesture {
-                        selectedTab = "Promos"
-                    }
-                
-                Icon(IconName: "plus.circle.fill", IconText: "New", isSelected: selectedTab == "New", isSpecial: true)
-                    .onTapGesture {
-                        selectedTab = "New"
-                    }
-                
-                Icon(IconName: "creditcard", IconText: "Accounts", isSelected: selectedTab == "Accounts")
-                    .onTapGesture {
-                        selectedTab = "Accounts"
-                    }
-                
-                Icon(IconName: "person", IconText: "Profile", isSelected: selectedTab == "Profile")
-                    .onTapGesture {
-                        selectedTab = "Profile"
+                        withAnimation {
+                            showNewOptions = false
+                        }
                     }
             }
-            .padding(.horizontal, 16)
+
+            VStack {
+                Spacer()
+                
+                HStack(spacing: 35) {
+                    Icon(IconName: "house", IconText: "Home", isSelected: selectedTab == "Home")
+                        .onTapGesture {
+                            selectedTab = "Home"
+                        }
+                    
+                    Icon(IconName: "gift", IconText: "Promos", isSelected: selectedTab == "Promos")
+                        .onTapGesture {
+                            selectedTab = "Promos"
+                        }
+
+                    // Botón "New" que despliega las opciones hacia arriba
+                    ZStack {
+                        Icon(IconName: "plus.circle.fill", IconText: "New", isSelected: selectedTab == "New", isSpecial: true)
+                            .onTapGesture {
+                                withAnimation {
+                                    showNewOptions.toggle()
+                                }
+                            }
+                        
+                        // Botones desplegables hacia arriba
+                        if showNewOptions {
+                            VStack(spacing: 12) {
+                                Button(action: {
+                                    // Acción para "Expense"
+                                }) {
+                                    Text("Expense")
+                                        .padding()
+                                        .frame(width: 140)
+                                        .background(Color.primarySpendiq)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+
+                                Button(action: {
+                                    // Acción para "Income"
+                                }) {
+                                    Text("Income")
+                                        .padding()
+                                        .frame(width: 140)
+                                        .background(Color.primarySpendiq)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+
+                                Button(action: {
+                                    // Acción para "Transaction"
+                                }) {
+                                    Text("Transaction")
+                                        .padding()
+                                        .frame(width: 140)
+                                        .background(Color.primarySpendiq)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+                            }
+                            .transition(.move(edge: .bottom))
+                            .offset(y: -300) // Desplaza los botones hacia arriba
+                        }
+                    }
+
+                    Icon(IconName: "creditcard", IconText: "Accounts", isSelected: selectedTab == "Accounts")
+                        .onTapGesture {
+                            selectedTab = "Accounts"
+                        }
+                    
+                    Icon(IconName: "person", IconText: "Profile", isSelected: selectedTab == "Profile")
+                        .onTapGesture {
+                            selectedTab = "Profile"
+                        }
+                }
+                .padding(.horizontal, 16)
+            }
         }
         .frame(height: 56)
     }
@@ -51,17 +109,17 @@ struct Icon: View {
     var body: some View {
         VStack(spacing: 4) {
             ZStack {
-                if isSelected{
+                if isSelected {
                     Circle()
                         .fill(.primarySpendiq)
                         .frame(width: 50, height: 50)
                         .offset(y: -15)
                 }
-                if isSpecial{
+                if isSpecial {
                     Circle()
                         .fill(.primarySpendiq)
                         .frame(width: 60, height: 60)
-                        .offset(y:-15)
+                        .offset(y: -15)
                     
                     Image(systemName: IconName)
                         .resizable()
@@ -71,8 +129,6 @@ struct Icon: View {
                         .offset(y: isSelected || isSpecial ? -15 : 0)
                         .accessibilityLabel("\(IconText) Icon")
                 }
-                
-                
                 
                 Image(systemName: IconName)
                     .resizable()
@@ -84,7 +140,6 @@ struct Icon: View {
             }
             .frame(minWidth: 44, minHeight: 44)
 
-            
             Text(IconText)
                 .font(.custom("SF Pro", size: 12).weight(.medium))
                 .foregroundColor(isSelected ? Color.primarySpendiq : Color.black)
@@ -95,4 +150,8 @@ struct Icon: View {
         }
         .padding(.top, isSelected || isSpecial ? -5 : 0)
     }
+}
+
+#Preview {
+    TabBar(selectedTab: .constant("Home"))
 }
