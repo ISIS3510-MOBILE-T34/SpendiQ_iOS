@@ -17,10 +17,12 @@ struct DayResumeTitle: View {
         HStack{
             Text("\(Day)")
                 .padding(.leading,16)
+                .font(.system(size: 16))
             Spacer()
             Text("$ \(Expenses)")
             Text("$ \(Incomes)")
                 .padding(.trailing,16)
+                .font(.system(size: 16))
         }
             
         Divider()
