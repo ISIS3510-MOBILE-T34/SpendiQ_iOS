@@ -35,9 +35,9 @@ struct GraphBox: View {
                                 chartView(data: maxData)
                             }
                         }
-                        .cornerRadius(14)
                         .frame(width: 361, height: 264)
                         .shadow(radius: 4)
+                        .cornerRadius(14)
                     }
                 }
                 .padding(.horizontal, (geometry.size.width - 361) / 2)
@@ -92,19 +92,18 @@ struct GraphBox: View {
                     x: .value("Day", index),
                     y: .value("Value", value)
                 )
-                .foregroundStyle(Color.blue.opacity(0.2)) // Estilo del área
+                .foregroundStyle(Color.primarySpendiq.opacity(0.2)) // Estilo del área
                 
                 // Gráfico de línea
                 LineMark(
                     x: .value("Day", index),
                     y: .value("Value", value)
                 )
-                .foregroundStyle(Color.blue) // Estilo de la línea
+                .foregroundStyle(Color.primarySpendiq.opacity(0.5)) // Estilo de la línea
                 .lineStyle(StrokeStyle(lineWidth: 2)) // Estilo de la línea
             }
         }
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
+
         .frame(width: 350, height: 160) // Ajustar el tamaño de la gráfica
     }
 }
