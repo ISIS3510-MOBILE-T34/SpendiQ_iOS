@@ -42,6 +42,8 @@ struct HomePage: View {
                     .fontWeight(.regular)
                 
                 DayResume()
+                    .padding(.bottom, 5)
+                DayResume()
                 
                 
                 Spacer()

@@ -13,6 +13,7 @@ struct MovementResume: View {
     var MovementTime : String
     var MovementAmount : Int
     var MovementEmoji : String
+    var IsExpense: Bool
     
     var body: some View {
         HStack (spacing: 4 ){
@@ -48,14 +49,25 @@ struct MovementResume: View {
             
             Spacer()
             
-            Text("$ \(MovementAmount)")
-                .fontWeight(.medium)
-                .font(.system(size:16))
-                .padding(.trailing, 16)
+            if IsExpense {
+                Text("$ \(MovementAmount)")
+                    .fontWeight(.medium)
+                    .font(.system(size:16))
+                    .padding(.trailing, 16)
+                    .foregroundStyle(.red)
+            } else{
+                Text("$ \(MovementAmount)")
+                    .fontWeight(.medium)
+                    .font(.system(size:16))
+                    .padding(.trailing, 16)
+                    .foregroundStyle(.primarySpendiq)
+            }
+            
+            
         }
     }
 }
 
 #Preview {
-    MovementResume(MovementName: "Juan Valdez cafe", AccountName: "Bancolombia", MovementTime: "13:53 PM", MovementAmount: 10000, MovementEmoji: "☕️")
+    MovementResume(MovementName: "Juan Valdez cafe", AccountName: "Bancolombia", MovementTime: "13:53 PM", MovementAmount: 10000, MovementEmoji: "☕️", IsExpense: true)
 }
