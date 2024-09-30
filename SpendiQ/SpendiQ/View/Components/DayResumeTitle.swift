@@ -20,9 +20,13 @@ struct DayResumeTitle: View {
                 .font(.system(size: 16))
             Spacer()
             Text("$ \(Expenses)")
+                .foregroundStyle(.red)
+                .fontWeight(.semibold)
             Text("$ \(Incomes)")
                 .padding(.trailing,16)
                 .font(.system(size: 16))
+                .foregroundStyle(.primarySpendiq)
+                .fontWeight(.semibold)
         }
             
         Divider()

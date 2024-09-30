@@ -3,28 +3,27 @@ import Charts
 
 struct GraphBox: View {
     @Binding var currentIndex: Int
-    @State private var selectedTimeFrame: String = "1 Day" // Estado para la selección de tiempo
+    @State private var selectedTimeFrame: String = "1 Day"
     
-    // Datos de ejemplo para cada rango de tiempo
     let dayData = [20, 40, 30, 50, 60, 70, 55]
     let monthData = [100, 80, 120, 110, 150, 140, 180]
     let yearData = [200, 300, 250, 400, 380, 500, 450]
     let maxData = [500, 600, 550, 700, 750, 800, 850]
-
+    
     let views = [
         Color.white,
         Color.white
     ]
     
-    let timeFrames = ["1 Day", "1 Month", "1 Year", "Max"] // Opciones de tiempo
-
+    let timeFrames = ["1 Day", "1 Month", "1 Year", "Max"]
+    
     var body: some View {
         VStack {
             GeometryReader { geometry in
                 HStack(spacing: 10) {
                     ForEach(0..<views.count, id: \.self) { index in
                         VStack {
-                            // Mostrar la gráfica correspondiente al rango de tiempo seleccionado
+        
                             if selectedTimeFrame == "1 Day" {
                                 chartView(data: dayData)
                             } else if selectedTimeFrame == "1 Month" {
@@ -57,7 +56,6 @@ struct GraphBox: View {
                 )
             }
             
-            // Barra inferior para seleccionar el tiempo
             HStack(spacing: 20) {
                 ForEach(timeFrames, id: \.self) { frame in
                     Button(action: {
@@ -76,13 +74,12 @@ struct GraphBox: View {
                     }
                 }
             }
-            .frame(width: 361, height: 48) // Ajusta las dimensiones de la barra
-            .background(Color.gray.opacity(0.1)) // Fondo gris claro
+            .frame(width: 361, height: 48)
+            .background(Color.gray.opacity(0.1))
             .cornerRadius(14)
         }
     }
     
-    // Función que retorna una vista de la gráfica con LineMark y AreaMark
     @ViewBuilder
     func chartView(data: [Int]) -> some View {
         Chart {
@@ -92,19 +89,16 @@ struct GraphBox: View {
                     x: .value("Day", index),
                     y: .value("Value", value)
                 )
-                .foregroundStyle(Color.primarySpendiq.opacity(0.2)) // Estilo del área
-                
-                // Gráfico de línea
+                .foregroundStyle(Color.primarySpendiq.opacity(0.2))
                 LineMark(
                     x: .value("Day", index),
                     y: .value("Value", value)
                 )
-                .foregroundStyle(Color.primarySpendiq.opacity(0.5)) // Estilo de la línea
-                .lineStyle(StrokeStyle(lineWidth: 2)) // Estilo de la línea
+                .foregroundStyle(Color.primarySpendiq.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 2))
             }
         }
-
-        .frame(width: 350, height: 160) // Ajustar el tamaño de la gráfica
+        .frame(width: 350, height: 160)
     }
 }
 
