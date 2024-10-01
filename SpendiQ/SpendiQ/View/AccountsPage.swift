@@ -1,28 +1,26 @@
 import SwiftUI
 
 struct AccountsPage: View {
-    @State private var accounts: [AccountData] = [] // Lista de cuentas
+    @StateObject private var viewModel = BankAccountViewModel() // ViewModel para la lista de cuentas
     @State private var showAddAccountSheet = false // Control para mostrar el formulario de agregar cuenta
     
     var body: some View {
         VStack {
-            // Verificamos si hay cuentas en la lista
-            if accounts.isEmpty {
+            if viewModel.accounts.isEmpty {
                 Text("No accounts available")
                     .padding(.top, 20)
             } else {
                 List {
-                    ForEach(accounts) { account in
+                    ForEach(viewModel.accounts, id: \.name) { account in
                         HStack {
                             Text(account.name)
                             Spacer()
-                            Text("$\(account.initialBalance, specifier: "%.2f")")
+                            Text("$\(account.amount, specifier: "%.2f")")
                         }
                     }
                 }
             }
             
-            // Botón para agregar una nueva cuenta
             Button(action: {
                 showAddAccountSheet = true
             }) {
@@ -35,22 +33,12 @@ struct AccountsPage: View {
                     .padding()
             }
             .sheet(isPresented: $showAddAccountSheet) {
-                AccountForm { newAccount in
-                    // Agregar la nueva cuenta a la lista
-                    accounts.append(newAccount)
-                }
+                AccountForm(viewModel: viewModel)
             }
         }
+        // Recargar las cuentas cada vez que la vista aparezca
+        .onAppear {
+            viewModel.getBankAccounts() // Llama al método que recupera las cuentas desde Firebase
+        }
     }
-}
-
-// Modelo de datos para la cuenta
-struct AccountData: Identifiable {
-    let id = UUID()
-    var name: String
-    var initialBalance: Double
-}
-
-#Preview {
-    AccountsPage()
 }

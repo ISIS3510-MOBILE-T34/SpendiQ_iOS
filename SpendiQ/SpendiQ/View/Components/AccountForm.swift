@@ -2,9 +2,9 @@ import SwiftUI
 
 struct AccountForm: View {
     @Environment(\.dismiss) var dismiss
+    @ObservedObject var viewModel: BankAccountViewModel // Inyectamos el ViewModel
     @State private var accountName: String = ""
     @State private var initialBalance: Double? = nil
-    var onSave: (AccountData) -> Void // Callback para guardar la cuenta
     
     var body: some View {
         VStack(alignment: .center, spacing: 20) {
@@ -28,10 +28,8 @@ struct AccountForm: View {
             
             HStack {
                 Button(action: {
-                    // Aseguramos que el nombre y saldo estén completos antes de guardar
                     if let balance = initialBalance, !accountName.isEmpty {
-                        let newAccount = AccountData(name: accountName, initialBalance: balance)
-                        onSave(newAccount) // Llamamos al callback para agregar la nueva cuenta
+                        viewModel.addAccount(name: accountName, amount: balance)
                         dismiss() // Cerrar el modal
                     }
                 }) {
@@ -59,8 +57,4 @@ struct AccountForm: View {
         }
         .frame(maxHeight: .infinity)
     }
-}
-
-#Preview {
-    AccountForm { _ in }
 }

@@ -3,7 +3,7 @@ import SwiftUI
 struct Account: View {
     @Environment(\.dismiss) var dismiss
     @State private var accountName: String = "" // Campo de nombre de cuenta
-    @State private var initialBalance: Double? = nil // Campo de saldo inicial (Double)
+    @State private var initialBalance: Double? = 0 // Campo de saldo inicial (Double)
     
     var body: some View {
         VStack(alignment: .center, spacing: 20) {
@@ -25,7 +25,7 @@ struct Account: View {
                         .keyboardType(.decimalPad)
                         .onChange(of: initialBalance) { newValue in
                             if let newValue = newValue, newValue < 0 {
-                                initialBalance = nil // Validar si el saldo es negativo
+                                initialBalance = 0 // Validar si el saldo es negativo
                             }
                         }
                 }
