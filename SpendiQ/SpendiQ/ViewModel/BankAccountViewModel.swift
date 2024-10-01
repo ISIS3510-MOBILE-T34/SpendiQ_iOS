@@ -29,11 +29,25 @@ class BankAccountViewModel: ObservableObject {
                 print("Error retrieving accounts: \(error.localizedDescription)")
             } else {
                 let accounts = querySnapshot?.documents.compactMap { document -> BankAccount? in
-                    return try? document.data(as: BankAccount.self)
+                    var account = try? document.data(as: BankAccount.self)
+                    account?.id = document.documentID // Asigna el documentID a la cuenta
+                    return account
                 }
                 DispatchQueue.main.async {
                     self.accounts = accounts ?? []
                 }
+            }
+        }
+    }
+
+    // Método para eliminar una cuenta
+    func deleteAccount(accountID: String) {
+        db.collection("accounts").document(accountID).delete { error in
+            if let error = error {
+                print("Error deleting account: \(error.localizedDescription)")
+            } else {
+                print("Account deleted successfully")
+                self.getBankAccounts() // Actualiza la lista después de eliminar
             }
         }
     }
