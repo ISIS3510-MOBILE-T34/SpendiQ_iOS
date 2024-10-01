@@ -6,13 +6,18 @@
 //
 
 import SwiftUI
+import LocalAuthentication
 
 struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var email = ""
     @State private var password = ""
     @State private var rememberMe = false
-    
+    @State private var isUnlocked = false
+    @State private var showForgotPassword = false
+    @State private var showPrivacy = false // Nueva variable para Privacy
+    @State private var showHelp = false // Nueva variable para Help
+
     var body: some View {
         ZStack {
             Color(hex: "FFFFFF").edgesIgnoringSafeArea(.all)
@@ -64,7 +69,7 @@ struct LoginView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Email")
-                        .font(.custom("SFProText-Regular", size: 14))
+                        .font(.custom("SFProText-Regular", size: 18))
                     TextField("Email...", text: $email)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.emailAddress)
@@ -74,7 +79,7 @@ struct LoginView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Password")
-                        .font(.custom("SFProText-Regular", size: 14))
+                        .font(.custom("SFProText-Regular", size: 18))
                     SecureField("Password...", text: $password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .foregroundColor(Color(hex: "65558F"))
@@ -100,10 +105,26 @@ struct LoginView: View {
                 }
                 .padding(.top, 20)
                 
+                // Botón de Face ID
+                Button(action: authenticateWithFaceID) {
+                    HStack {
+                        Image(systemName: "faceid")
+                            .foregroundColor(.white)
+                        Text("Log in with Face ID")
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(hex: "65558F"))
+                    .cornerRadius(10)
+                    .font(.custom("SFProText-Regular", size: 18))
+                }
+                .padding(.top, 10)
+                
                 HStack {
                     Spacer()
                     Button(action: {
-                        // TODO: Implement forgot password action
+                        showForgotPassword = true
                     }) {
                         Text("Forgot your ID or password?")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -118,7 +139,7 @@ struct LoginView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-                        // TODO: Implement privacy action
+                        showPrivacy = true // Mostrar vista de Privacy
                     }) {
                         Text("Privacy")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -127,7 +148,7 @@ struct LoginView: View {
                     Text("|")
                         .foregroundColor(Color(hex: "65558F"))
                     Button(action: {
-                        // TODO: Implement help action
+                        showHelp = true // Mostrar vista de Help
                     }) {
                         Text("Help")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -139,8 +160,39 @@ struct LoginView: View {
             .padding(.horizontal, 40)
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordView()
+        }
+        .sheet(isPresented: $showPrivacy) {
+            PrivacyView() // Presentar la vista de PrivacyView
+        }
+        .sheet(isPresented: $showHelp) {
+            HelpView() // Presentar la vista de HelpView
+        }
+    }
+    
+    private func authenticateWithFaceID() {
+        let context = LAContext()
+        var error: NSError?
+        
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            let reason = "Log in to your account"
+            
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                DispatchQueue.main.async {
+                    if success {
+                        // TODO: Handle successful authentication
+                    } else {
+                        // TODO: Handle failed authentication
+                    }
+                }
+            }
+        } else {
+            // TODO: Handle no biometric authentication available
+        }
     }
 }
+
 
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {

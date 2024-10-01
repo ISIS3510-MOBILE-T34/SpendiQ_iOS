@@ -14,6 +14,7 @@ struct SignUpView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var agreeToTerms = false
+    @State private var showTermsAndConditions = false
     
     var body: some View {
         ZStack {
@@ -30,7 +31,6 @@ struct SignUpView: View {
                     path.addLine(to: CGPoint(x: width * 0.0, y: height * 0.6))
                     path.addLine(to: CGPoint(x: -width * 1.0, y: height * 1.9))
                     path.closeSubpath()
-                    path.closeSubpath()
                 }
                 .stroke(Color(hex: "C33BA5"), lineWidth: 5)
                 
@@ -43,12 +43,11 @@ struct SignUpView: View {
                     path.addLine(to: CGPoint(x: width * 1.1, y: -height * 0.3))
                     path.addLine(to: CGPoint(x: width * 0.75, y: height * 0.13))
                     path.closeSubpath()
-                    path.closeSubpath()
                 }
                 .stroke(Color(hex: "B3CB54"), lineWidth: 5)
             }
             
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 25) {
                 HStack {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
@@ -57,14 +56,16 @@ struct SignUpView: View {
                             .foregroundColor(Color(hex: "65558F"))
                     }
                     Text("Create Free Account")
-                        .font(.custom("SFProDisplay-Bold", size: 24))
+                        .font(.custom("SFProDisplay-Bold", size: 32)) // Aumentar el tamaño del título
                         .fontWeight(.bold)
                 }
                 .padding(.top, 50)
                 
+
+                
                 VStack(alignment: .leading, spacing: 10) {
                     Text("First & Last Name")
-                        .font(.custom("SFProText-Regular", size: 14))
+                        .font(.custom("SFProText-Regular", size: 18))
                     TextField("Enter your name...", text: $firstName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .foregroundColor(Color(hex: "65558F"))
@@ -72,7 +73,7 @@ struct SignUpView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Email Address")
-                        .font(.custom("SFProText-Regular", size: 14))
+                        .font(.custom("SFProText-Regular", size: 18))
                     TextField("you@example.com", text: $email)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.emailAddress)
@@ -82,7 +83,7 @@ struct SignUpView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Create Password")
-                        .font(.custom("SFProText-Regular", size: 14))
+                        .font(.custom("SFProText-Regular", size: 18))
                     SecureField("Create a secure password...", text: $password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
@@ -90,11 +91,15 @@ struct SignUpView: View {
                 HStack {
                     Toggle("", isOn: $agreeToTerms)
                         .labelsHidden()
-                    Text("I agree with the ")
-                        .font(.custom("SFProText-Regular", size: 14)) +
-                    Text("Terms & Conditions")
-                        .foregroundColor(Color(hex: "C33BA5"))
-                        .font(.custom("SFProText-Regular", size: 14))
+                    Text("I agree with the")
+                        .font(.custom("SFProText-Regular", size: 18))
+                    Button(action: {
+                        showTermsAndConditions = true
+                    }) {
+                        Text("Terms & Conditions")
+                            .foregroundColor(Color(hex: "C33BA5"))
+                            .font(.custom("SFProText-Regular", size: 15))
+                    }
                 }
                 
                 Button(action: {
@@ -115,8 +120,13 @@ struct SignUpView: View {
             .padding(.horizontal, 40)
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showTermsAndConditions) {
+            TermsAndConditionsView()
+        }
     }
 }
+
+
 
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
