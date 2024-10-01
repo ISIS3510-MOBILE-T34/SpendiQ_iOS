@@ -4,38 +4,33 @@ struct Movement: View {
     @State private var showSheet = true
     
     var body: some View {
-        Button("") {
-            showSheet.toggle()
-        }
-        .sheet(isPresented: $showSheet) {
-            EditTransactionForm() // Aquí llamamos al formulario que contiene los campos editables
-                .presentationDetents([.large]) // Controla las alturas del modal
-                .presentationDragIndicator(.visible) // Barra de "drag"
-        }
+        EditTransactionForm()
     }
 }
 
 struct EditTransactionForm: View {
-    @Environment(\.dismiss) var dismiss // Para cerrar la hoja modal
-    @State private var transactionType: String = "Expense" // Estado para el tipo de transacción
-    @State private var transactionName: String = "TDA DE CAFE JUAN VAL"
-    @State private var amount: String = "$ 9.800,00"
-    @State private var account: String = "Bancolombia"
-    @State private var selectedEmoji: String = "☕️" // Estado para el emoji seleccionado
-    @FocusState private var isEmojiFieldFocused: Bool // Estado para controlar el foco del campo de emojis
-    @State private var selectedTime: Date = Date() // Estado para la hora seleccionada
-    @State private var isTimePickerVisible: Bool = false // Controla la visibilidad del Time Picker
-
+    @Environment(\.dismiss) var dismiss
+    @State private var transactionType: String = "Expense"
+    @State private var transactionName: String = ""
+    @State private var amount: Double? = nil // Cambiamos `amount` a Double
+    @State private var account: String = ""
+    @State private var targetAccount: String = "" // Campo para transacciones
+    @State private var selectedEmoji: String = ""
+    @FocusState private var isEmojiFieldFocused: Bool
+    @State private var selectedDate: Date = Date()
+    @State private var isDatePickerVisible: Bool = false // Control para el DatePicker
+    @State private var selectedTime: Date = Date()
+    @State private var isTimePickerVisible: Bool = false // Control para el TimePicker
+    
     let transactionTypes = ["Expense", "Income", "Transaction"]
-
+    
     var body: some View {
         VStack(alignment: .center, spacing: 20) {
             Text("Transaction")
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding(.top, 20)
-
-            // Picker para seleccionar el tipo de transacción
+            
             Picker("Select Type", selection: $transactionType) {
                 ForEach(transactionTypes, id: \.self) { type in
                     Text(type).tag(type)
@@ -43,72 +38,98 @@ struct EditTransactionForm: View {
             }
             .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal, 20)
-
-            // Imagen del icono
+            
             VStack {
                 ZStack(alignment: .center) {
                     Circle()
                         .frame(width: 100, height: 100)
                         .foregroundColor(.primarySpendiq)
-                    Text(selectedEmoji)
+                    Text(selectedEmoji.isEmpty ? "🙂" : selectedEmoji)
                         .font(.system(size: 58))
                 }
-
-                // Botón para cambiar el ícono y enfocar el campo de emojis
+                
                 Button("Change icon") {
-                    isEmojiFieldFocused = true // Enfoca el campo de emojis
+                    isEmojiFieldFocused = true
                 }
                 .foregroundColor(.blue)
             }
-
-            // Formulario con campos editables
+            
             Form {
                 Section(header: Text("Transaction name")) {
                     TextField("Transaction name", text: $transactionName)
                         .frame(height: 32)
                 }
-
+                
+                // Actualizamos el campo amount para manejar Double
                 Section(header: Text("Amount")) {
-                    TextField("Amount", text: $amount)
+                    TextField("Amount", value: $amount, format: .number)
                         .keyboardType(.decimalPad)
+                        .onChange(of: amount) { newValue in
+                            if let newValue = newValue, newValue < 0 {
+                                amount = nil
+                            }
+                        }
                 }
-
+                
                 Section(header: Text("Account")) {
                     TextField("Account", text: $account)
                 }
-
-                // Selector de hora: muestra solo la hora si no está seleccionado
-                Section(header: Text("Time")) {
+                
+                if transactionType == "Transaction" {
+                    Section(header: Text("Target Account")) {
+                        TextField("Target Account", text: $targetAccount)
+                    }
+                }
+                
+                Section(header: Text("Date")) {
                     ZStack {
-                        // Time Picker visible cuando el usuario toca la hora
-                        if isTimePickerVisible {
-                            DatePicker("Select Time", selection: $selectedTime, displayedComponents: .hourAndMinute)
+                        if isDatePickerVisible {
+                            DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
                                 .datePickerStyle(WheelDatePickerStyle())
-                                .onTapGesture {
-                                    // Permite que el DatePicker siga abierto mientras interactúan con él
-                                }
                         } else {
-                            Text(selectedTime, style: .time)
+                            Text(selectedDate, style: .date)
                                 .onTapGesture {
-                                    isTimePickerVisible = true // Muestra el Time Picker
+                                    isDatePickerVisible = true
                                 }
                         }
                     }
-                    // Superposición para detectar toques fuera del Time Picker
+                    .background(
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if isDatePickerVisible {
+                                    isDatePickerVisible = false
+                                }
+                            }
+                    )
+                }
+                
+                // Selector de hora con comportamiento desplegable
+                Section(header: Text("Time")) {
+                    ZStack {
+                        if isTimePickerVisible {
+                            DatePicker("Select Time", selection: $selectedTime, displayedComponents: .hourAndMinute)
+                                .datePickerStyle(WheelDatePickerStyle())
+                        } else {
+                            Text(selectedTime, style: .time)
+                                .onTapGesture {
+                                    isTimePickerVisible = true
+                                }
+                        }
+                    }
                     .background(
                         Color.clear
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 if isTimePickerVisible {
-                                    isTimePickerVisible = false // Oculta el Time Picker si se toca fuera de él
+                                    isTimePickerVisible = false
                                 }
                             }
                     )
                 }
-
             }
-            .background(Color.clear) // Fondo claro para evitar el gris predeterminado
-
+            .background(Color.clear)
+            
             // Botones
             HStack {
                 Button(action: {
@@ -121,9 +142,9 @@ struct EditTransactionForm: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
-
+                
                 Button(action: {
-                    dismiss() // Cierra la hoja modal cuando se presiona el botón Cancel
+                    dismiss()
                 }) {
                     Text("Cancel")
                         .frame(maxWidth: .infinity)
@@ -138,18 +159,13 @@ struct EditTransactionForm: View {
         }
         .frame(maxHeight: .infinity)
         .onTapGesture {
-            // Detecta si se toca fuera del Time Picker y lo oculta
+            if isDatePickerVisible {
+                isDatePickerVisible = false
+            }
             if isTimePickerVisible {
                 isTimePickerVisible = false
             }
         }
-    }
-}
-
-extension Character {
-    // Propiedad para determinar si el carácter es un emoji
-    var isEmoji: Bool {
-        return unicodeScalars.first?.properties.isEmojiPresentation ?? false
     }
 }
 

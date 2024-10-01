@@ -2,40 +2,40 @@ import SwiftUI
 
 struct TabBar: View {
     @Binding var selectedTab: String
-    @State private var showSheet = false // Controla si se muestra la Bottom Sheet
-
+    @State private var showSheet = false
+    
     var body: some View {
         ZStack {
             Color(.tabBar)
                 .ignoresSafeArea(edges: .bottom)
-
+            
             HStack(spacing: 35) {
                 Icon(IconName: "house", IconText: "Home", isSelected: selectedTab == "Home")
                     .onTapGesture {
                         selectedTab = "Home"
                     }
-
+                
                 Icon(IconName: "gift", IconText: "Promos", isSelected: selectedTab == "Promos")
                     .onTapGesture {
                         selectedTab = "Promos"
                     }
-
-                // Aquí es donde el botón "New" activa la Bottom Sheet con el formulario directamente
+                
+                
                 Icon(IconName: "plus.circle.fill", IconText: "New", isSelected: selectedTab == "New", isSpecial: true)
                     .onTapGesture {
-                        showSheet.toggle() // Activa la presentación de la Bottom Sheet
+                        showSheet.toggle()
                     }
                     .sheet(isPresented: $showSheet) {
-                        EditTransactionForm() // Muestra el formulario directamente
-                            .presentationDetents([.large]) // Controla las alturas del modal
-                            .presentationDragIndicator(.visible) // Barra de "drag"
+                        EditTransactionForm()
+                            .presentationDetents([.large])
+                            .presentationDragIndicator(.visible)
                     }
-
+                
                 Icon(IconName: "creditcard", IconText: "Accounts", isSelected: selectedTab == "Accounts")
                     .onTapGesture {
                         selectedTab = "Accounts"
                     }
-
+                
                 Icon(IconName: "person", IconText: "Profile", isSelected: selectedTab == "Profile")
                     .onTapGesture {
                         selectedTab = "Profile"
@@ -52,7 +52,7 @@ struct Icon: View {
     let IconText: String
     let isSelected: Bool
     var isSpecial: Bool = false
-
+    
     var body: some View {
         VStack(spacing: 4) {
             ZStack {
@@ -80,15 +80,15 @@ struct Icon: View {
                 Image(systemName: IconName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 30, height: 30)
                     .foregroundColor(isSelected || isSpecial ? .white : .black)
                     .offset(y: isSelected || isSpecial ? -15 : 0)
                     .accessibilityLabel("\(IconText) Icon")
             }
             .frame(minWidth: 44, minHeight: 44)
-
+            
             Text(IconText)
-                .font(.custom("SF Pro", size: 12).weight(.medium))
+                .font(.custom("SF Pro", size: 14).weight(.medium))
                 .foregroundColor(isSelected ? Color.primarySpendiq : Color.black)
                 .accessibilityLabel(IconText)
                 .accessibilityHint(isSelected ? "Currently selected" : "Tap to select \(IconText)")
