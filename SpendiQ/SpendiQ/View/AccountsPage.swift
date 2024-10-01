@@ -5,6 +5,7 @@ struct AccountsPage: View {
     @State private var showAddAccountSheet = false // Control para mostrar el formulario de agregar cuenta
     @State private var showDeleteConfirmation = false // Control para confirmar eliminación
     @State private var selectedAccountID: String? // Cuenta seleccionada para eliminar
+    @State private var selectedAccount: BankAccount? // Cuenta seleccionada para ver detalles
 
     var body: some View {
         VStack {
@@ -20,6 +21,9 @@ struct AccountsPage: View {
                             Text("$\(account.amount, specifier: "%.2f")")
                         }
                         .contentShape(Rectangle()) // Hace que toda la celda sea seleccionable
+                        .onTapGesture {
+                            selectedAccount = account // Almacena la cuenta seleccionada
+                        }
                         .swipeActions {
                             Button(role: .destructive) {
                                 selectedAccountID = account.id // Almacena el documentID de la cuenta para eliminar
@@ -62,6 +66,9 @@ struct AccountsPage: View {
                 },
                 secondaryButton: .cancel()
             )
+        }
+        .sheet(item: $selectedAccount) { account in
+            AccountDetail(account: account, viewModel: viewModel) // Navega a la página de detalle
         }
     }
 }

@@ -51,4 +51,23 @@ class BankAccountViewModel: ObservableObject {
             }
         }
     }
+    
+    // Método para actualizar una cuenta
+    func updateAccount(account: BankAccount, newName: String, newBalance: Double) {
+        guard let accountID = account.id else { return }
+        let updatedAccount = BankAccount(id: accountID, name: newName, amount: newBalance)
+        
+        do {
+            try db.collection("accounts").document(accountID).setData(from: updatedAccount) { error in
+                if let error = error {
+                    print("Error updating account: \(error.localizedDescription)")
+                } else {
+                    print("Account updated successfully")
+                    self.getBankAccounts() // Actualiza la lista de cuentas
+                }
+            }
+        } catch {
+            print("Error updating account: \(error.localizedDescription)")
+        }
+    }
 }
