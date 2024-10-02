@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    //@State actualiza la vista cada vez que selectedTab cambia
     @State private var selectedTab: String = "Home"
     
     var body: some View {
@@ -9,17 +8,23 @@ struct ContentView: View {
             
             if selectedTab == "Home" {
                 HomePage()
+                    .onAppear {
+                        NotificationManager.shared.requestNotificationPermission()
+                        NotificationManager.shared.scheduleTestMessage()
+                    }
+                    
             } else if selectedTab == "Promos" {
                 PromosPage()
             } else if selectedTab == "Accounts" {
                 AccountsPage()
-            }else if selectedTab == "Profile" {
+            } else if selectedTab == "Profile" {
                 ProfilePage()
             }
             
         }
         Spacer()
         TabBar(selectedTab: $selectedTab)
+        
     }
 }
 
