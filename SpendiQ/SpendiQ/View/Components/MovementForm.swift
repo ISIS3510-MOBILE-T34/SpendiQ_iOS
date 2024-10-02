@@ -118,7 +118,7 @@ struct EditTransactionForm: View {
                 Button(action: {
                     // Guardar la transacción en la base de datos
                     transactionViewModel.addTransaction(
-                        transactionName: transactionName,
+                        accountID: selectedAccountID, transactionName: transactionName,
                         amount: amount,
                         fromAccountID: selectedAccountID,
                         toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
