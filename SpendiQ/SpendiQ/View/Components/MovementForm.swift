@@ -19,7 +19,8 @@ struct EditTransactionForm: View {
     @State private var selectedDateTime: Date = Date()
     @FocusState private var isEmojiFieldFocused: Bool
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
-    
+    @ObservedObject var transactionViewModel = TransactionViewModel()  // Inyectar el TransactionViewModel
+
     let transactionTypes = ["Expense", "Income", "Transaction"]
     
     var body: some View {
@@ -68,7 +69,6 @@ struct EditTransactionForm: View {
                         }
                 }
                 
-                
                 Section(header: Text("Select Account")) {
                     Picker("Account", selection: $selectedAccountID) {
                         ForEach(bankAccountViewModel.accounts) { account in
@@ -79,14 +79,12 @@ struct EditTransactionForm: View {
                     .onAppear {
                         bankAccountViewModel.getBankAccounts()
                     }
-                    
-                    .onChange(of: bankAccountViewModel.accounts) {_, newAccounts in
+                    .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
                         if !newAccounts.isEmpty, selectedAccountID.isEmpty {
                             selectedAccountID = newAccounts.first?.id ?? ""
                         }
                     }
                 }
-                
                 
                 if transactionType == "Transaction" {
                     Section(header: Text("Target Account")) {
@@ -96,7 +94,7 @@ struct EditTransactionForm: View {
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
-                        .onChange(of: bankAccountViewModel.accounts) {_, newAccounts in
+                        .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
                             if !newAccounts.isEmpty, selectedTargetAccountID.isEmpty {
                                 selectedTargetAccountID = newAccounts.first?.id ?? ""
                             }
@@ -104,12 +102,10 @@ struct EditTransactionForm: View {
                     }
                 }
                 
-                
                 Section(header: Text("Date")) {
                     DatePicker("Select Date", selection: $selectedDateTime, displayedComponents: .date)
                         .datePickerStyle(CompactDatePickerStyle())
                 }
-                
                 
                 Section(header: Text("Time")) {
                     DatePicker("Select Time", selection: $selectedDateTime, displayedComponents: .hourAndMinute)
@@ -118,10 +114,18 @@ struct EditTransactionForm: View {
             }
             .background(Color.clear)
             
-            
             HStack {
                 Button(action: {
-                    
+                    // Guardar la transacción en la base de datos
+                    transactionViewModel.addTransaction(
+                        transactionName: transactionName,
+                        amount: amount,
+                        fromAccountID: selectedAccountID,
+                        toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
+                        transactionType: transactionType,
+                        dateTime: selectedDateTime
+                    )
+                    dismiss()
                 }) {
                     Text("Accept")
                         .frame(maxWidth: .infinity)
