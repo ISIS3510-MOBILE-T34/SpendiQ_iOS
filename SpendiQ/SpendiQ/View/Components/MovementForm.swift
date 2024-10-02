@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MovementForm: View {
     @ObservedObject var bankAccountViewModel: BankAccountViewModel  // Se inyecta el ViewModel
-
+    
     var body: some View {
         EditTransactionForm(bankAccountViewModel: bankAccountViewModel)
     }
@@ -13,13 +13,13 @@ struct EditTransactionForm: View {
     @State private var transactionType: String = "Expense"
     @State private var transactionName: String = ""
     @State private var amount: Float = 0.0
-    @State private var selectedAccountID: String = ""  // Cuenta de origen
-    @State private var selectedTargetAccountID: String = ""  // Nueva variable para cuenta de destino
+    @State private var selectedAccountID: String = ""
+    @State private var selectedTargetAccountID: String = ""
     @State private var selectedEmoji: String = ""
-    @State private var selectedDateTime: Date = Date()  // Única variable para fecha y hora
+    @State private var selectedDateTime: Date = Date()
     @FocusState private var isEmojiFieldFocused: Bool
-    @ObservedObject var bankAccountViewModel: BankAccountViewModel  // Observamos el ViewModel
-
+    @ObservedObject var bankAccountViewModel: BankAccountViewModel
+    
     let transactionTypes = ["Expense", "Income", "Transaction"]
     
     var body: some View {
@@ -68,7 +68,7 @@ struct EditTransactionForm: View {
                         }
                 }
                 
-                // Picker para seleccionar la cuenta de origen
+                
                 Section(header: Text("Select Account")) {
                     Picker("Account", selection: $selectedAccountID) {
                         ForEach(bankAccountViewModel.accounts) { account in
@@ -79,15 +79,15 @@ struct EditTransactionForm: View {
                     .onAppear {
                         bankAccountViewModel.getBankAccounts()
                     }
-                    // Observamos cuando las cuentas se cargan y asignamos la primera cuenta al `selectedAccountID`
-                    .onChange(of: bankAccountViewModel.accounts) { newAccounts in
+                    
+                    .onChange(of: bankAccountViewModel.accounts) {_, newAccounts in
                         if !newAccounts.isEmpty, selectedAccountID.isEmpty {
                             selectedAccountID = newAccounts.first?.id ?? ""
                         }
                     }
                 }
                 
-                // Si es "Transaction", permitimos escoger la cuenta de destino
+                
                 if transactionType == "Transaction" {
                     Section(header: Text("Target Account")) {
                         Picker("Target Account", selection: $selectedTargetAccountID) {
@@ -96,7 +96,7 @@ struct EditTransactionForm: View {
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
-                        .onChange(of: bankAccountViewModel.accounts) { newAccounts in
+                        .onChange(of: bankAccountViewModel.accounts) {_, newAccounts in
                             if !newAccounts.isEmpty, selectedTargetAccountID.isEmpty {
                                 selectedTargetAccountID = newAccounts.first?.id ?? ""
                             }
@@ -104,13 +104,13 @@ struct EditTransactionForm: View {
                     }
                 }
                 
-                // Selector de fecha
+                
                 Section(header: Text("Date")) {
                     DatePicker("Select Date", selection: $selectedDateTime, displayedComponents: .date)
                         .datePickerStyle(CompactDatePickerStyle())
                 }
                 
-                // Selector de hora
+                
                 Section(header: Text("Time")) {
                     DatePicker("Select Time", selection: $selectedDateTime, displayedComponents: .hourAndMinute)
                         .datePickerStyle(CompactDatePickerStyle())
@@ -118,11 +118,10 @@ struct EditTransactionForm: View {
             }
             .background(Color.clear)
             
-            // Botones
+            
             HStack {
                 Button(action: {
-                    // Acción de aceptar, para guardar el movimiento
-                    // Aquí guardarías la transacción con los datos seleccionados, incluyendo la cuenta de destino
+                    
                 }) {
                     Text("Accept")
                         .frame(maxWidth: .infinity)
