@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    //@State actualiza la vista cada vez que selectedTab cambia
     @State private var selectedTab: String = "Home"
     
     var body: some View {
@@ -17,7 +18,6 @@ struct ContentView: View {
             }
             
         }
-        .ignoresSafeArea(edges: .bottom)
         Spacer()
         TabBar(selectedTab: $selectedTab)
     }
