@@ -2,11 +2,7 @@ import SwiftUI
 
 struct DayResume: View {
     @State private var Movements: [MovementResumeData] = [
-        MovementResumeData(MovementName: "Juan Valdez cafe", AccountName: "Bancolombia", MovementTime: "13:53 PM", MovementAmount: 9800, MovementEmoji: "☕️", IsExpense: true),
-        MovementResumeData(MovementName: "Escuela de gastronomía", AccountName: "Bancolombia", MovementTime: "08:00 AM", MovementAmount: 10000, MovementEmoji: "🍳", IsExpense: false),
-        MovementResumeData(MovementName: "Escuela de gastronomía", AccountName: "Bancolombia", MovementTime: "08:00 AM", MovementAmount: 10000, MovementEmoji: "🍳", IsExpense: true),
-        MovementResumeData(MovementName: "Escuela de gastronomía", AccountName: "Bancolombia", MovementTime: "08:00 AM", MovementAmount: 10000, MovementEmoji: "🍳", IsExpense: false),
-        MovementResumeData(MovementName: "Escuela de gastronomía", AccountName: "Bancolombia", MovementTime: "08:00 AM", MovementAmount: 10000, MovementEmoji: "🍳", IsExpense: false)
+        MovementResumeData(MovementName: "Juan Valdez cafe", AccountName: "Bancolombia", MovementTime: "13:53 PM", MovementAmount: 9800, MovementEmoji: "☕️", IsExpense: true)
     ]
     
     // Función para calcular el total de gastos (Expenses)
