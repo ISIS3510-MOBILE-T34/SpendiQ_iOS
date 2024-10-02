@@ -1,40 +1,37 @@
 import SwiftUI
 
 struct DayResume: View {
-    @State private var Movements: [MovementResumeData] = [
-        MovementResumeData(MovementName: "Juan Valdez cafe", AccountName: "Bancolombia", MovementTime: "13:53 PM", MovementAmount: 9800, MovementEmoji: "☕️", IsExpense: true)
-    ]
-    
+    @ObservedObject var viewModel: TransactionViewModel  // Observamos el ViewModel para recibir los datos actualizados
+    var day: String  // Día que estamos resumiendo
+
     // Función para calcular el total de gastos (Expenses)
     var totalExpenses: Int {
-        Movements.filter { $0.IsExpense }.reduce(0) { $0 + $1.MovementAmount }
+        viewModel.transactionsByDay[day]?.filter { $0.transactionType == "Expense" }.reduce(0) { $0 + Int($1.amount) } ?? 0
     }
     
     // Función para calcular el total de ingresos (Incomes)
     var totalIncomes: Int {
-        Movements.filter { !$0.IsExpense }.reduce(0) { $0 + $1.MovementAmount }
+        viewModel.transactionsByDay[day]?.filter { $0.transactionType == "Income" }.reduce(0) { $0 + Int($1.amount) } ?? 0
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             // DayResumeTitle con actualización dinámica de Expenses e Incomes
-            DayResumeTitle(Expenses: totalExpenses, Incomes: totalIncomes, Day: "Sep 13, 2024")
+            DayResumeTitle(Expenses: totalExpenses, Incomes: totalIncomes, Day: day)
             
             // Lista de movimientos como VStack
             VStack(spacing: 12) {
-                ForEach(Movements) { movement in
-                    MovementResume(
-                        MovementName: movement.MovementName,
-                        AccountName: movement.AccountName,
-                        MovementTime: movement.MovementTime,
-                        MovementAmount: movement.MovementAmount,
-                        MovementEmoji: movement.MovementEmoji,
-                        IsExpense: movement.IsExpense
-                    )
-                    .frame(width: 361)
-                    
-                    Divider()
-                        .frame(width:361)
+                if let movements = viewModel.transactionsByDay[day] {
+                    ForEach(movements, id: \.id) { transaction in
+                        MovementResume(
+                            transaction: transaction,
+                            viewModel: viewModel  // Pasamos el ViewModel para obtener más datos
+                        )
+                        .frame(width: 361)
+                        
+                        Divider()
+                            .frame(width: 361)
+                    }
                 }
             }
         }
@@ -43,16 +40,5 @@ struct DayResume: View {
 }
 
 #Preview {
-    DayResume()
-}
-
-// Modelo de datos para los movimientos
-struct MovementResumeData: Identifiable {
-    var id = UUID()
-    var MovementName: String
-    var AccountName: String
-    var MovementTime: String
-    var MovementAmount: Int
-    var MovementEmoji: String
-    var IsExpense: Bool
+    DayResume(viewModel: TransactionViewModel(), day: "2024-09-13")
 }

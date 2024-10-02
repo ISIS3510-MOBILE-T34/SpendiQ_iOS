@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct DayResumeTitle: View {
-    @State var Expenses: Int =  0
-    @State var Incomes: Int =  0
+    @State var Expenses: Int = 0
+    @State var Incomes: Int = 0
     @State var Day: String = "Sep 13, 2024"
     var body: some View {
         Divider()
