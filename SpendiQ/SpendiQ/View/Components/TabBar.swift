@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TabBar: View {
+    //@Binding permite a esta clase modificar una variable declarada en otra vista
     @Binding var selectedTab: String
     @State private var showSheet = false
     
@@ -25,11 +26,13 @@ struct TabBar: View {
                     .onTapGesture {
                         showSheet.toggle()
                     }
+                //.sheet depsliega una vista modal
                     .sheet(isPresented: $showSheet) {
-                        EditTransactionForm()
+                        EditTransactionForm(bankAccountViewModel: BankAccountViewModel())
                             .presentationDetents([.large])
                             .presentationDragIndicator(.visible)
                     }
+                
                 
                 Icon(IconName: "creditcard", IconText: "Accounts", isSelected: selectedTab == "Accounts")
                     .onTapGesture {
@@ -62,6 +65,7 @@ struct Icon: View {
                         .frame(width: 50, height: 50)
                         .offset(y: -15)
                 }
+                
                 if isSpecial {
                     Circle()
                         .fill(.primarySpendiq)
@@ -72,9 +76,8 @@ struct Icon: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 40, height: 40)
-                        .foregroundColor(isSelected || isSpecial ? .white : .black)
-                        .offset(y: isSelected || isSpecial ? -15 : 0)
-                        .accessibilityLabel("\(IconText) Icon")
+                        .foregroundColor(.white)
+                        .offset(y: -15)
                 }
                 
                 Image(systemName: IconName)
@@ -83,22 +86,19 @@ struct Icon: View {
                     .frame(width: 30, height: 30)
                     .foregroundColor(isSelected || isSpecial ? .white : .black)
                     .offset(y: isSelected || isSpecial ? -15 : 0)
-                    .accessibilityLabel("\(IconText) Icon")
             }
             .frame(minWidth: 44, minHeight: 44)
             
             Text(IconText)
                 .font(.custom("SF Pro", size: 14).weight(.medium))
                 .foregroundColor(isSelected ? Color.primarySpendiq : Color.black)
-                .accessibilityLabel(IconText)
-                .accessibilityHint(isSelected ? "Currently selected" : "Tap to select \(IconText)")
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
-        .padding(.top, isSelected || isSpecial ? -5 : 0)
     }
 }
 
 #Preview {
+    //.constant es util cuando la vista espera una variable @Binding pero no hay necesidad de que esta cambie en el tiempo
     TabBar(selectedTab: .constant("Home"))
 }

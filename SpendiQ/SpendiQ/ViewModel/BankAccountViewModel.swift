@@ -3,10 +3,10 @@ import FirebaseFirestore
 class BankAccountViewModel: ObservableObject {
     @Published var accounts: [BankAccount] = []
     private let db = Firestore.firestore()
-
-    // Método para agregar una nueva cuenta y guardarla en Firebase
+    
+    // Función para agregar una cuenta a Firestore
     func addAccount(name: String, amount: Double) {
-        let newAccount = BankAccount(name: name, amount: amount)
+        let newAccount = BankAccount(id: nil, name: name, amount: amount)  // Inicialmente `id` es nil
         
         do {
             let _ = try db.collection("accounts").addDocument(from: newAccount) { error in
@@ -14,15 +14,15 @@ class BankAccountViewModel: ObservableObject {
                     print("Error saving account: \(error.localizedDescription)")
                 } else {
                     print("Account saved successfully")
-                    self.getBankAccounts() // Actualiza la lista después de agregar
+                    self.getBankAccounts()  // Actualizar la lista de cuentas tras la inserción
                 }
             }
         } catch {
             print("Error saving account: \(error.localizedDescription)")
         }
     }
-
-    // Método para recuperar las cuentas existentes
+    
+    // Función para obtener cuentas desde Firestore
     func getBankAccounts() {
         db.collection("accounts").getDocuments { (querySnapshot, error) in
             if let error = error {
@@ -30,29 +30,30 @@ class BankAccountViewModel: ObservableObject {
             } else {
                 let accounts = querySnapshot?.documents.compactMap { document -> BankAccount? in
                     var account = try? document.data(as: BankAccount.self)
-                    account?.id = document.documentID // Asigna el documentID a la cuenta
+                    account?.id = document.documentID  // Asignamos manualmente el `documentID` como `id`
                     return account
                 }
                 DispatchQueue.main.async {
                     self.accounts = accounts ?? []
+                    print("Loaded accounts: \(self.accounts)")  // Debug: Verifica si se cargaron las cuentas
                 }
             }
         }
     }
-
-    // Método para eliminar una cuenta
+    
+    // Función para eliminar una cuenta
     func deleteAccount(accountID: String) {
         db.collection("accounts").document(accountID).delete { error in
             if let error = error {
                 print("Error deleting account: \(error.localizedDescription)")
             } else {
                 print("Account deleted successfully")
-                self.getBankAccounts() // Actualiza la lista después de eliminar
+                self.getBankAccounts()  // Actualizar la lista tras eliminar una cuenta
             }
         }
     }
     
-    // Método para actualizar una cuenta
+    // Función para actualizar una cuenta en Firestore
     func updateAccount(account: BankAccount, newName: String, newBalance: Double) {
         guard let accountID = account.id else { return }
         let updatedAccount = BankAccount(id: accountID, name: newName, amount: newBalance)
@@ -63,7 +64,7 @@ class BankAccountViewModel: ObservableObject {
                     print("Error updating account: \(error.localizedDescription)")
                 } else {
                     print("Account updated successfully")
-                    self.getBankAccounts() // Actualiza la lista de cuentas
+                    self.getBankAccounts()  // Actualizar la lista tras la actualización
                 }
             }
         } catch {

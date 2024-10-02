@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct Movement: View {
-    @State private var showSheet = true
-    
+struct MovementForm: View {
+    @ObservedObject var bankAccountViewModel: BankAccountViewModel  // Se inyecta el ViewModel
+
     var body: some View {
-        EditTransactionForm()
+        EditTransactionForm(bankAccountViewModel: bankAccountViewModel)
     }
 }
 
@@ -12,16 +12,14 @@ struct EditTransactionForm: View {
     @Environment(\.dismiss) var dismiss
     @State private var transactionType: String = "Expense"
     @State private var transactionName: String = ""
-    @State private var amount: Double? = nil // Cambiamos `amount` a Double
-    @State private var account: String = ""
-    @State private var targetAccount: String = "" // Campo para transacciones
+    @State private var amount: Float = 0.0
+    @State private var selectedAccountID: String = ""  // Cuenta de origen
+    @State private var selectedTargetAccountID: String = ""  // Nueva variable para cuenta de destino
     @State private var selectedEmoji: String = ""
+    @State private var selectedDateTime: Date = Date()  // Única variable para fecha y hora
     @FocusState private var isEmojiFieldFocused: Bool
-    @State private var selectedDate: Date = Date()
-    @State private var isDatePickerVisible: Bool = false // Control para el DatePicker
-    @State private var selectedTime: Date = Date()
-    @State private var isTimePickerVisible: Bool = false // Control para el TimePicker
-    
+    @ObservedObject var bankAccountViewModel: BankAccountViewModel  // Observamos el ViewModel
+
     let transactionTypes = ["Expense", "Income", "Transaction"]
     
     var body: some View {
@@ -60,72 +58,62 @@ struct EditTransactionForm: View {
                         .frame(height: 32)
                 }
                 
-                // Actualizamos el campo amount para manejar Double
                 Section(header: Text("Amount")) {
                     TextField("Amount", value: $amount, format: .number)
                         .keyboardType(.decimalPad)
-                        .onChange(of: amount) { newValue in
-                            if let newValue = newValue, newValue < 0 {
-                                amount = nil
+                        .onChange(of: amount) { oldValue, newValue in
+                            if newValue < 0 {
+                                amount = 0.0
                             }
                         }
                 }
                 
-                Section(header: Text("Account")) {
-                    TextField("Account", text: $account)
+                // Picker para seleccionar la cuenta de origen
+                Section(header: Text("Select Account")) {
+                    Picker("Account", selection: $selectedAccountID) {
+                        ForEach(bankAccountViewModel.accounts) { account in
+                            Text(account.name).tag(account.id ?? "")
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .onAppear {
+                        bankAccountViewModel.getBankAccounts()
+                    }
+                    // Observamos cuando las cuentas se cargan y asignamos la primera cuenta al `selectedAccountID`
+                    .onChange(of: bankAccountViewModel.accounts) { newAccounts in
+                        if !newAccounts.isEmpty, selectedAccountID.isEmpty {
+                            selectedAccountID = newAccounts.first?.id ?? ""
+                        }
+                    }
                 }
                 
+                // Si es "Transaction", permitimos escoger la cuenta de destino
                 if transactionType == "Transaction" {
                     Section(header: Text("Target Account")) {
-                        TextField("Target Account", text: $targetAccount)
+                        Picker("Target Account", selection: $selectedTargetAccountID) {
+                            ForEach(bankAccountViewModel.accounts) { account in
+                                Text(account.name).tag(account.id ?? "")
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .onChange(of: bankAccountViewModel.accounts) { newAccounts in
+                            if !newAccounts.isEmpty, selectedTargetAccountID.isEmpty {
+                                selectedTargetAccountID = newAccounts.first?.id ?? ""
+                            }
+                        }
                     }
                 }
                 
+                // Selector de fecha
                 Section(header: Text("Date")) {
-                    ZStack {
-                        if isDatePickerVisible {
-                            DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
-                                .datePickerStyle(WheelDatePickerStyle())
-                        } else {
-                            Text(selectedDate, style: .date)
-                                .onTapGesture {
-                                    isDatePickerVisible = true
-                                }
-                        }
-                    }
-                    .background(
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                if isDatePickerVisible {
-                                    isDatePickerVisible = false
-                                }
-                            }
-                    )
+                    DatePicker("Select Date", selection: $selectedDateTime, displayedComponents: .date)
+                        .datePickerStyle(CompactDatePickerStyle())
                 }
                 
-                // Selector de hora con comportamiento desplegable
+                // Selector de hora
                 Section(header: Text("Time")) {
-                    ZStack {
-                        if isTimePickerVisible {
-                            DatePicker("Select Time", selection: $selectedTime, displayedComponents: .hourAndMinute)
-                                .datePickerStyle(WheelDatePickerStyle())
-                        } else {
-                            Text(selectedTime, style: .time)
-                                .onTapGesture {
-                                    isTimePickerVisible = true
-                                }
-                        }
-                    }
-                    .background(
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                if isTimePickerVisible {
-                                    isTimePickerVisible = false
-                                }
-                            }
-                    )
+                    DatePicker("Select Time", selection: $selectedDateTime, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(CompactDatePickerStyle())
                 }
             }
             .background(Color.clear)
@@ -133,7 +121,8 @@ struct EditTransactionForm: View {
             // Botones
             HStack {
                 Button(action: {
-                    // Acción de aceptar
+                    // Acción de aceptar, para guardar el movimiento
+                    // Aquí guardarías la transacción con los datos seleccionados, incluyendo la cuenta de destino
                 }) {
                     Text("Accept")
                         .frame(maxWidth: .infinity)
@@ -159,16 +148,11 @@ struct EditTransactionForm: View {
         }
         .frame(maxHeight: .infinity)
         .onTapGesture {
-            if isDatePickerVisible {
-                isDatePickerVisible = false
-            }
-            if isTimePickerVisible {
-                isTimePickerVisible = false
-            }
+            bankAccountViewModel.getBankAccounts()
         }
     }
 }
 
 #Preview {
-    Movement()
+    MovementForm(bankAccountViewModel: BankAccountViewModel())
 }

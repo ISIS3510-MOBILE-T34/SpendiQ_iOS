@@ -13,6 +13,7 @@ struct AccountsPage: View {
                 Text("No accounts available")
                     .padding(.top, 20)
             } else {
+                
                 List {
                     ForEach(viewModel.accounts, id: \.id) { account in
                         HStack {
