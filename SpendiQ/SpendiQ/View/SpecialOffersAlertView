@@ -39,3 +39,10 @@ struct SpecialOffersAlertView: View {
         )
     }
 }
+
+struct SpecialOffersAlertView_Previews: PreviewProvider {
+    static var previews: some View {
+        let viewModel = SpecialOffersViewModel()
+        SpecialOffersAlertView(viewModel: viewModel)
+    }
+}
