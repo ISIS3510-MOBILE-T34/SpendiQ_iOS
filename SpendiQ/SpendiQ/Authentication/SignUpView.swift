@@ -9,10 +9,9 @@ import SwiftUI
 
 struct SignUpView: View {
     @Environment(\.presentationMode) var presentationMode
+    @StateObject private var viewModel = AuthenticationViewModel()
     @State private var firstName = ""
     @State private var lastName = ""
-    @State private var email = ""
-    @State private var password = ""
     @State private var agreeToTerms = false
     @State private var showTermsAndConditions = false
     
@@ -56,12 +55,10 @@ struct SignUpView: View {
                             .foregroundColor(Color(hex: "65558F"))
                     }
                     Text("Create Free Account")
-                        .font(.custom("SFProDisplay-Bold", size: 32)) // Aumentar el tamaño del título
+                        .font(.custom("SFProDisplay-Bold", size: 32))
                         .fontWeight(.bold)
                 }
                 .padding(.top, 50)
-                
-
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("First & Last Name")
@@ -74,7 +71,7 @@ struct SignUpView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Email Address")
                         .font(.custom("SFProText-Regular", size: 18))
-                    TextField("you@example.com", text: $email)
+                    TextField("you@example.com", text: $viewModel.email)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
@@ -84,7 +81,7 @@ struct SignUpView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Create Password")
                         .font(.custom("SFProText-Regular", size: 18))
-                    SecureField("Create a secure password...", text: $password)
+                    SecureField("Create a secure password...", text: $viewModel.password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 
@@ -103,7 +100,11 @@ struct SignUpView: View {
                 }
                 
                 Button(action: {
-                    // TODO: Implement sign up action
+                    if agreeToTerms {
+                        viewModel.signUp()
+                    } else {
+                        viewModel.errorMessage = "Please agree to the Terms & Conditions"
+                    }
                 }) {
                     Text("Sign Up")
                         .frame(maxWidth: .infinity)
@@ -115,6 +116,12 @@ struct SignUpView: View {
                 }
                 .padding(.top, 20)
                 
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.custom("SFProText-Regular", size: 14))
+                }
+                
                 Spacer()
             }
             .padding(.horizontal, 40)
@@ -125,8 +132,6 @@ struct SignUpView: View {
         }
     }
 }
-
-
 
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
