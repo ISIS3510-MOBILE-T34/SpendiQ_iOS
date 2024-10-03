@@ -10,13 +10,12 @@ import LocalAuthentication
 
 struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var email = ""
-    @State private var password = ""
+    @StateObject private var viewModel = AuthenticationViewModel()
     @State private var rememberMe = false
     @State private var isUnlocked = false
     @State private var showForgotPassword = false
-    @State private var showPrivacy = false // Nueva variable para Privacy
-    @State private var showHelp = false // Nueva variable para Help
+    @State private var showPrivacy = false
+    @State private var showHelp = false
 
     var body: some View {
         ZStack {
@@ -70,7 +69,7 @@ struct LoginView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Email")
                         .font(.custom("SFProText-Regular", size: 18))
-                    TextField("Email...", text: $email)
+                    TextField("Email...", text: $viewModel.email)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
@@ -80,7 +79,7 @@ struct LoginView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Password")
                         .font(.custom("SFProText-Regular", size: 18))
-                    SecureField("Password...", text: $password)
+                    SecureField("Password...", text: $viewModel.password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .foregroundColor(Color(hex: "65558F"))
                 }
@@ -93,7 +92,7 @@ struct LoginView: View {
                 }
                 
                 Button(action: {
-                    // TODO: Implement login action
+                    viewModel.login()
                 }) {
                     Text("Log In")
                         .frame(maxWidth: .infinity)
@@ -134,12 +133,18 @@ struct LoginView: View {
                 }
                 .padding(.top, 10)
                 
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.custom("SFProText-Regular", size: 14))
+                }
+                
                 Spacer()
                 
                 HStack {
                     Spacer()
                     Button(action: {
-                        showPrivacy = true // Mostrar vista de Privacy
+                        showPrivacy = true
                     }) {
                         Text("Privacy")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -148,7 +153,7 @@ struct LoginView: View {
                     Text("|")
                         .foregroundColor(Color(hex: "65558F"))
                     Button(action: {
-                        showHelp = true // Mostrar vista de Help
+                        showHelp = true
                     }) {
                         Text("Help")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -164,10 +169,10 @@ struct LoginView: View {
             ForgotPasswordView()
         }
         .sheet(isPresented: $showPrivacy) {
-            PrivacyView() // Presentar la vista de PrivacyView
+            PrivacyView()
         }
         .sheet(isPresented: $showHelp) {
-            HelpView() // Presentar la vista de HelpView
+            HelpView()
         }
     }
     
@@ -181,18 +186,21 @@ struct LoginView: View {
             context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
                 DispatchQueue.main.async {
                     if success {
-                        // TODO: Handle successful authentication
+                        // Aquí deberías implementar la lógica para iniciar sesión automáticamente
+                        // Por ejemplo, podrías tener un método en el viewModel para iniciar sesión con Face ID
+                        // viewModel.loginWithFaceID()
                     } else {
-                        // TODO: Handle failed authentication
+                        // Manejar el error de autenticación
+                        viewModel.errorMessage = "Face ID authentication failed"
                     }
                 }
             }
         } else {
-            // TODO: Handle no biometric authentication available
+            // Face ID no está disponible
+            viewModel.errorMessage = "Face ID is not available on this device"
         }
     }
 }
-
 
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
