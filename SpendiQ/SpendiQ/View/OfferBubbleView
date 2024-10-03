@@ -38,3 +38,18 @@ struct OfferBubbleView: View {
         .padding(.vertical, 11)
     }
 }
+
+struct OfferBubbleView_Previews: PreviewProvider {
+    static var previews: some View {
+        let offer = OfferModel(
+            id: "1",
+            placeName: "McDonald's Parque 93",
+            offerDescription: "Get 20% off on all meals!",
+            recommendationReason: "you have bought 30 times in the last month",
+            logoName: "mcdonalds",
+            latitude: 0.0,
+            longitude: 0.0
+        )
+        OfferBubbleView(offer: offer)
+    }
+}
