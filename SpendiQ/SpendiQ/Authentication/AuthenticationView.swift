@@ -3,7 +3,7 @@
 //  SpendiQ
 //
 //  Created by Daniel Clavijo on 30/09/24.
-//F
+//
 
 import SwiftUI
 
