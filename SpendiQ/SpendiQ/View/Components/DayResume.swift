@@ -1,3 +1,5 @@
+// DayResume.swift
+
 import SwiftUI
 
 struct DayResume: View {
@@ -13,17 +15,18 @@ struct DayResume: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
             DayResumeTitle(Expenses: totalExpenses, Incomes: totalIncomes, Day: day)
 
-            VStack {
+            VStack(spacing: 12) {
                 if let movements = viewModel.transactionsByDay[day] {
                     ForEach(movements, id: \.id) { transaction in
                         MovementResume(
                             transaction: transaction,
                             viewModel: viewModel
                         )
-                        .frame(width: 400)
+                        .frame(width: 380)
+                        .padding(.bottom,0)
                     }
                 }
             }

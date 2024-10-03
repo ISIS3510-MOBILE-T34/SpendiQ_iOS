@@ -1,9 +1,12 @@
+// HomePage.swift
+
 import SwiftUI
 
 struct HomePage: View {
-    @State private var currentIndex: Int = 0  // Controla el índice del cuadro actual
-    @State private var CurrentBalance: Int = 504277
-    @StateObject private var viewModel = TransactionViewModel()  // Se crea una instancia del ViewModel
+    @State private var currentIndex: Int = 0
+    @State private var CurrentBalance: Int = 0
+    @ObservedObject private var viewModel = TransactionViewModel()
+    @ObservedObject private var bankAccountViewModel = BankAccountViewModel()
 
     var body: some View {
         VStack {
@@ -16,7 +19,6 @@ struct HomePage: View {
                         .font(.custom("SF Pro", size: 19))
                         .fontWeight(.regular)
                         .padding(.leading,86)
-                        .foregroundStyle(.black)
                     
                     Image(systemName: "bell.fill")
                         .padding(.leading,50)
@@ -25,7 +27,7 @@ struct HomePage: View {
                 Spacer()
                     .frame(height: 6)
                 
-                Text("$ \(CurrentBalance)")
+                Text("$ \(calculateTotalBalance(), specifier: "%.2f")")
                     .font(.custom("SF Pro", size: 32))
                     .foregroundColor(.primarySpendiq)
                     .fontWeight(.bold)
@@ -41,10 +43,9 @@ struct HomePage: View {
                     .font(.custom("SF Pro", size: 19))
                     .fontWeight(.regular)
                 
-                // Muestra los resúmenes de días usando los datos reales
                 ForEach(viewModel.transactionsByDay.keys.sorted().reversed(), id: \.self) { day in
                     DayResume(viewModel: viewModel, day: day)
-                        .padding(.bottom, 5)
+                        .padding(.bottom, 0)
                 }
                 
                 Spacer()
@@ -52,13 +53,19 @@ struct HomePage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.white)
             .onAppear {
-                // Llama a la función para obtener las transacciones de todas las cuentas al cargar la página
                 viewModel.getTransactionsForAllAccounts()
+                bankAccountViewModel.getBankAccounts()
+            }
+            .onReceive(viewModel.objectWillChange) { _ in
+                // Update the view when the viewModel changes
+            }
+            .onReceive(bankAccountViewModel.objectWillChange) { _ in
+                // Update the balance when the bankAccountViewModel changes
             }
         }
     }
-}
-
-#Preview {
-    HomePage()
+    
+    func calculateTotalBalance() -> Double {
+        return bankAccountViewModel.accounts.reduce(0.0) { $0 + $1.amount }
+    }
 }

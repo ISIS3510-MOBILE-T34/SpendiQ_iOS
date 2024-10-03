@@ -1,14 +1,21 @@
+// MovementForm.swift
+
 import SwiftUI
 
 struct MovementForm: View {
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
 
     var body: some View {
-        EditTransactionForm(bankAccountViewModel: bankAccountViewModel, transactionViewModel: TransactionViewModel())
+        EditTransactionForm(
+            bankAccountViewModel: bankAccountViewModel,
+            transactionViewModel: TransactionViewModel(),
+            transaction: nil
+        )
     }
 }
 
-import SwiftUI
+// EditTransactionForm.swift
+
 
 struct EditTransactionForm: View {
     @Environment(\.dismiss) var dismiss
@@ -23,9 +30,9 @@ struct EditTransactionForm: View {
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
     @ObservedObject var transactionViewModel: TransactionViewModel
     var transaction: Transaction?
-
+    
     let transactionTypes = ["Expense", "Income", "Transaction"]
-
+    
     var body: some View {
         NavigationView {
             VStack(alignment: .center, spacing: 20) {
@@ -33,7 +40,7 @@ struct EditTransactionForm: View {
                     .font(.title2)
                     .fontWeight(.bold)
                     .padding(.top, 20)
-
+                
                 Picker("Select Type", selection: $transactionType) {
                     ForEach(transactionTypes, id: \.self) { type in
                         Text(type).tag(type)
@@ -41,10 +48,10 @@ struct EditTransactionForm: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal, 20)
-                .onChange(of: transactionType) {_, newValue in
+                .onChange(of: transactionType) { _, newValue in
                     selectedEmoji = selectEmoji(for: newValue)
                 }
-
+                
                 VStack {
                     ZStack(alignment: .center) {
                         Circle()
@@ -53,19 +60,19 @@ struct EditTransactionForm: View {
                         Text(selectedEmoji.isEmpty ? "🙂" : selectedEmoji)
                             .font(.system(size: 58))
                     }
-
+                    
                     Button("Change icon") {
                         isEmojiFieldFocused = true
                     }
                     .foregroundColor(.blue)
                 }
-
+                
                 Form {
                     Section(header: Text("Transaction name")) {
                         TextField("Transaction name", text: $transactionName)
                             .frame(height: 32)
                     }
-
+                    
                     Section(header: Text("Amount")) {
                         TextField("Amount", value: $amount, format: .number)
                             .keyboardType(.decimalPad)
@@ -75,7 +82,7 @@ struct EditTransactionForm: View {
                                 }
                             }
                     }
-
+                    
                     Section(header: Text("Select Account")) {
                         Picker("Account", selection: $selectedAccountID) {
                             ForEach(bankAccountViewModel.accounts) { account in
@@ -92,7 +99,7 @@ struct EditTransactionForm: View {
                             }
                         }
                     }
-
+                    
                     if transactionType == "Transaction" {
                         Section(header: Text("Target Account")) {
                             Picker("Target Account", selection: $selectedTargetAccountID) {
@@ -108,19 +115,19 @@ struct EditTransactionForm: View {
                             }
                         }
                     }
-
+                    
                     Section(header: Text("Date")) {
                         DatePicker("Select Date", selection: $selectedDateTime, displayedComponents: .date)
                             .datePickerStyle(CompactDatePickerStyle())
                     }
-
+                    
                     Section(header: Text("Time")) {
                         DatePicker("Select Time", selection: $selectedDateTime, displayedComponents: .hourAndMinute)
                             .datePickerStyle(CompactDatePickerStyle())
                     }
                 }
                 .background(Color.clear)
-
+                
                 HStack {
                     Button(action: {
                         if let transaction = transaction {
@@ -153,7 +160,7 @@ struct EditTransactionForm: View {
                             .foregroundColor(.white)
                             .cornerRadius(8)
                     }
-
+                    
                     if transaction != nil {
                         Button(action: {
                             transactionViewModel.deleteTransaction(
@@ -170,7 +177,7 @@ struct EditTransactionForm: View {
                                 .cornerRadius(8)
                         }
                     }
-
+                    
                     Button(action: {
                         dismiss()
                     }) {
@@ -201,7 +208,7 @@ struct EditTransactionForm: View {
             }
         }
     }
-
+    
     func selectEmoji(for transactionType: String) -> String {
         switch transactionType {
         case "Expense":
@@ -209,13 +216,9 @@ struct EditTransactionForm: View {
         case "Income":
             return "🍾"
         case "Transaction":
-            return "3"
+            return "🔄"
         default:
-            return "4"
+            return "❓"
         }
     }
-}
-
-#Preview {
-    MovementForm(bankAccountViewModel: BankAccountViewModel())
 }

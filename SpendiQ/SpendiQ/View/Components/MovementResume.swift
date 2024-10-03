@@ -1,9 +1,11 @@
+// MovementResume.swift
+
 import SwiftUI
 
 struct MovementResume: View {
-    var transaction: Transaction  // Obtenemos un objeto Transaction desde el ViewModel
-    @ObservedObject var viewModel: TransactionViewModel  // Referencia al ViewModel para datos adicionales
-    @State private var showEditForm = false  // For sheet presentation
+    var transaction: Transaction
+    @ObservedObject var viewModel: TransactionViewModel
+    @State private var showEditForm = false
 
     var body: some View {
         HStack (spacing: 4 ){
@@ -11,7 +13,7 @@ struct MovementResume: View {
                 Circle()
                     .frame(width:48, height:48)
                     .foregroundStyle(.yellow)
-                Text(selectEmoji(for: transaction.transactionType))  // Basado en el tipo de transacción
+                Text(selectEmoji(for: transaction.transactionType))
                     .font(.largeTitle)
             }
             .padding(.leading,16)
@@ -21,34 +23,31 @@ struct MovementResume: View {
                     .fontWeight(.regular)
                 
                 HStack{
-                    Text(viewModel.accounts[transaction.fromAccountID] ?? "Loading...")  // Usamos el diccionario actualizado en el ViewModel
+                    Text(viewModel.accounts[transaction.fromAccountID] ?? "Loading...")
                         .fontWeight(.light)
                         .font(.system(size:14))
                     
                     Divider()
                         .frame(height:14)
                     
-                    Text(formatTime(transaction.dateTime))  // Formatear la hora de la transacción
+                    Text(formatTime(transaction.dateTime))
                         .fontWeight(.light)
                         .font(.system(size:14))
                 }
                 
             }
-            .frame(alignment:.leading)
 
             Spacer()
             
             if transaction.transactionType == "Expense" {
-                Text("$ \(Int(transaction.amount))")  // Mostrar la cantidad como gasto
+                Text("-$ \(Int(transaction.amount))")
                     .fontWeight(.medium)
                     .font(.system(size:16))
-                    .padding(.trailing, 16)
                     .foregroundStyle(.red)
             } else {
-                Text("$ \(Int(transaction.amount))")  // Mostrar la cantidad como ingreso/transacción
+                Text("+$ \(Int(transaction.amount))")
                     .fontWeight(.medium)
                     .font(.system(size:16))
-                    .padding(.trailing, 16)
                     .foregroundStyle(.primarySpendiq)
             }
         }
@@ -64,14 +63,12 @@ struct MovementResume: View {
             )
         }
         .onAppear {
-            // Asegurarnos de que se cargue el nombre de la cuenta si no está ya en el diccionario
             if viewModel.accounts[transaction.fromAccountID] == nil {
                 viewModel.getAccountName(fromAccountID: transaction.fromAccountID)
             }
         }
     }
 
-    // Función para seleccionar el emoji en función del tipo de transacción
     func selectEmoji(for transactionType: String) -> String {
         switch transactionType {
         case "Expense":
@@ -81,28 +78,13 @@ struct MovementResume: View {
         case "Transaction":
             return "🔄"
         default:
-            return "❓"  // Emoji por defecto si no coincide con ningún tipo
+            return "❓"
         }
     }
 
-    // Función para formatear la hora
     func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
         return formatter.string(from: date)
     }
-}
-
-#Preview {
-    MovementResume(
-        transaction: Transaction(
-            transactionName: "Juan Valdez cafe",
-            amount: 10000,
-            fromAccountID: "Bancolombia",
-            toAccountID: nil,
-            transactionType: "Expense",
-            dateTime: Date()
-        ),
-        viewModel: TransactionViewModel()
-    )
 }

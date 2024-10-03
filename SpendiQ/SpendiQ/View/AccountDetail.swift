@@ -1,9 +1,11 @@
+// AccountDetail.swift
+
 import SwiftUI
 
 struct AccountDetail: View {
-    @State var account: BankAccount // Cuenta seleccionada
+    @State var account: BankAccount // Selected account
     @ObservedObject var viewModel: BankAccountViewModel
-    @State private var isEditing = false // Control para editar
+    @State private var isEditing = false // Control for editing
     @State private var editedName: String = ""
     @State private var editedBalance: Double = 0.0
 
@@ -37,11 +39,13 @@ struct AccountDetail: View {
                 if isEditing {
                     Button(action: {
                         if !editedName.isEmpty {
-                            // Actualiza la cuenta en Firebase y en la lista local
-                            viewModel.updateAccount(account: account, newName: editedName, newBalance: editedBalance)
-                            account.name = editedName
-                            account.amount = editedBalance
-                            isEditing = false
+                            // Update the account in Firebase and local list
+                            if let accountID = account.id {
+                                viewModel.updateAccount(accountID: accountID, newName: editedName, newBalance: editedBalance)
+                                account.name = editedName
+                                account.amount = editedBalance
+                                isEditing = false
+                            }
                         }
                     }) {
                         Text("Save")
