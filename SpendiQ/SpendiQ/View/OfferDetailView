@@ -65,3 +65,18 @@ struct OfferDetailView: View {
         .navigationBarTitle("Offer Details", displayMode: .inline)
     }
 }
+
+struct OfferDetailView_Previews: PreviewProvider {
+    static var previews: some View {
+        let offer = OfferModel(
+            id: "1",
+            placeName: "McDonald's Parque 93",
+            offerDescription: "Get 20% off on all meals!",
+            recommendationReason: "you have bought 30 times in the last month",
+            logoName: "mcdonalds",
+            latitude: 4.676,
+            longitude: -74.048
+        )
+        OfferDetailView(offer: offer)
+    }
+}
