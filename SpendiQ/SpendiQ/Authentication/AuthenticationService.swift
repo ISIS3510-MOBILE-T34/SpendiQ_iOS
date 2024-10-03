@@ -86,4 +86,5 @@ class AuthenticationService: AuthenticationServiceProtocol {
                 }
             }
         }.eraseToAnyPublisher()
+    }
 }
