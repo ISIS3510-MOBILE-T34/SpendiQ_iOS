@@ -9,8 +9,8 @@ struct ContentView: View {
             if selectedTab == "Home" {
                 HomePage()
                     .onAppear {
-                        NotificationManager.shared.requestNotificationPermission()
-                        NotificationManager.shared.scheduleTestMessage()
+//                        NotificationManager.shared.requestNotificationPermission()
+//                        NotificationManager.shared.scheduleTestMessage()
                     }
                     
             } else if selectedTab == "Promos" {
