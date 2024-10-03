@@ -28,6 +28,7 @@ class AuthenticationViewModel: ObservableObject {
                 case .finished:
                     break
                 case .failure(let error):
+
                     self?.errorMessage = error.localizedDescription
                 }
             } receiveValue: { [weak self] success in

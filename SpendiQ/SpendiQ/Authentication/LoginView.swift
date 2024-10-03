@@ -133,6 +133,7 @@ struct LoginView: View {
                 }
                 .padding(.top, 10)
                 
+
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
