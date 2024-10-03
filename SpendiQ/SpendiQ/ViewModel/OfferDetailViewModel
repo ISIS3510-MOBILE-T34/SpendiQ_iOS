@@ -1,0 +1,13 @@
+//
+//  OfferDetailViewModel.swift
+//  SpendiQ
+//
+//  Created by Fai on 25/09/24.
+//
+
+import Foundation
+import MapKit
+
+class OfferDetailViewModel: ObservableObject {
+    @Published var region: MKCoordinateRegion
+    var offer: OfferModel
