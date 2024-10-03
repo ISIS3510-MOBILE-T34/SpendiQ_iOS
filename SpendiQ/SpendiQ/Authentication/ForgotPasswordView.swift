@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ForgotPasswordView: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var email = ""
+    @StateObject private var viewModel = AuthenticationViewModel()
     @State private var verificationCode = ""
     @State private var newPassword = ""
     @State private var confirmPassword = ""
@@ -73,7 +73,7 @@ struct ForgotPasswordView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Enter your email")
                             .font(.custom("SFProText-Regular", size: 14))
-                        TextField("Email...", text: $email)
+                        TextField("Email...", text: $viewModel.email)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
@@ -81,7 +81,7 @@ struct ForgotPasswordView: View {
                     }
                     
                     Button(action: {
-                        // Simulate sending code
+                        viewModel.resetPassword()
                         withAnimation {
                             isCodeSent = true
                         }
@@ -106,7 +106,7 @@ struct ForgotPasswordView: View {
                     }
                     
                     Button(action: {
-                        // Simulate verifying code
+                        viewModel.verifyResetCode(verificationCode)
                         withAnimation {
                             isCodeVerified = true
                         }
@@ -136,7 +136,11 @@ struct ForgotPasswordView: View {
                     }
                     
                     Button(action: {
-                        // TODO: Implement password reset action
+                        if newPassword == confirmPassword {
+                            viewModel.confirmPasswordReset(code: verificationCode, newPassword: newPassword)
+                        } else {
+                            viewModel.errorMessage = "Passwords do not match"
+                        }
                     }) {
                         Text("Reset Password")
                             .frame(maxWidth: .infinity)
@@ -147,6 +151,12 @@ struct ForgotPasswordView: View {
                             .font(.custom("SFProText-Regular", size: 18))
                     }
                     .padding(.top, 20)
+                }
+                
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.custom("SFProText-Regular", size: 14))
                 }
                 
                 Spacer()
