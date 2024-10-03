@@ -7,7 +7,7 @@
 
 import Foundation
 import CoreLocation
-import FirebaseFirestoreSwift
+import FirebaseFirestore
 
 struct ShopSalesModel: Identifiable, Codable {
     @DocumentID var id: String?
