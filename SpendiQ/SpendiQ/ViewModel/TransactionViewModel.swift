@@ -2,12 +2,11 @@ import FirebaseFirestore
 
 class TransactionViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
-    @Published var transactionsByDay: [String: [Transaction]] = [:]  // Agrupar transacciones por día
-    @Published var totalByDay: [String: Float] = [:]  // Total de transacciones por día
-    @Published var accounts: [String: String] = [:]  // Diccionario que almacena el ID de la cuenta y su nombre
+    @Published var transactionsByDay: [String: [Transaction]] = [:]
+    @Published var totalByDay: [String: Float] = [:]
+    @Published var accounts: [String: String] = [:]
     private let db = Firestore.firestore()
 
-    // Función para obtener las transacciones de todas las cuentas
     func getTransactionsForAllAccounts() {
         db.collection("accounts").getDocuments { (querySnapshot, error) in
             if let error = error {
@@ -18,7 +17,7 @@ class TransactionViewModel: ObservableObject {
                 var totalByDayTemp: [String: Float] = [:]
 
                 let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"  // Formato para agrupar por día
+                dateFormatter.dateFormat = "yyyy-MM-dd"
 
                 for document in querySnapshot?.documents ?? [] {
                     let accountID = document.documentID
@@ -33,26 +32,21 @@ class TransactionViewModel: ObservableObject {
                                 if let transaction = transaction {
                                     transactionsTemp.append(transaction)
 
-                                    // Convertir la fecha a un formato de día
                                     let day = dateFormatter.string(from: transaction.dateTime)
 
-                                    // Agrupar transacciones por día
                                     if transactionsByDayTemp[day] != nil {
                                         transactionsByDayTemp[day]?.append(transaction)
                                     } else {
                                         transactionsByDayTemp[day] = [transaction]
                                     }
 
-                                    // Sumar el total de cada día
                                     totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
 
-                                    // Obtener el nombre de la cuenta de la transacción
                                     self.getAccountName(fromAccountID: transaction.fromAccountID)
                                 }
                             }
                         }
 
-                        // Actualizar las propiedades publicadas
                         DispatchQueue.main.async {
                             self.transactions = transactionsTemp
                             self.transactionsByDay = transactionsByDayTemp
@@ -64,7 +58,6 @@ class TransactionViewModel: ObservableObject {
         }
     }
 
-    // Función para agregar una nueva transacción a la subcolección de la cuenta
     func addTransaction(accountID: String, transactionName: String, amount: Float, fromAccountID: String?, toAccountID: String?, transactionType: String, dateTime: Date) {
         let newTransaction = Transaction(
             transactionName: transactionName,
@@ -74,14 +67,14 @@ class TransactionViewModel: ObservableObject {
             transactionType: transactionType,
             dateTime: dateTime
         )
-        
+
         do {
             let _ = try db.collection("accounts").document(accountID).collection("transactions").addDocument(from: newTransaction) { error in
                 if let error = error {
                     print("Error saving transaction: \(error.localizedDescription)")
                 } else {
                     print("Transaction saved successfully")
-                    self.getTransactionsForAllAccounts()  // Actualizar la lista de transacciones de todas las cuentas
+                    self.getTransactionsForAllAccounts()
                 }
             }
         } catch {
@@ -89,31 +82,52 @@ class TransactionViewModel: ObservableObject {
         }
     }
 
-    // Función para eliminar una transacción en la subcolección de una cuenta
+    func updateTransaction(transaction: Transaction, transactionName: String, amount: Float, fromAccountID: String, toAccountID: String?, transactionType: String, dateTime: Date) {
+        guard let transactionID = transaction.id else { return }
+        let updatedTransaction = Transaction(
+            transactionName: transactionName,
+            amount: amount,
+            fromAccountID: fromAccountID,
+            toAccountID: toAccountID,
+            transactionType: transactionType,
+            dateTime: dateTime
+        )
+
+        do {
+            try db.collection("accounts").document(fromAccountID).collection("transactions").document(transactionID).setData(from: updatedTransaction) { error in
+                if let error = error {
+                    print("Error updating transaction: \(error.localizedDescription)")
+                } else {
+                    print("Transaction updated successfully")
+                    self.getTransactionsForAllAccounts()
+                }
+            }
+        } catch {
+            print("Error updating transaction: \(error.localizedDescription)")
+        }
+    }
+
     func deleteTransaction(accountID: String, transactionID: String) {
         db.collection("accounts").document(accountID).collection("transactions").document(transactionID).delete { error in
             if let error = error {
                 print("Error deleting transaction: \(error.localizedDescription)")
             } else {
                 print("Transaction deleted successfully")
-                self.getTransactionsForAllAccounts()  // Actualizar la lista de transacciones de todas las cuentas
+                self.getTransactionsForAllAccounts()
             }
         }
     }
 
-    // Función para obtener el nombre de la cuenta a partir del ID
     func getAccountName(fromAccountID: String) {
-        // Verificar si ya tenemos el nombre de la cuenta en el diccionario
         if accounts[fromAccountID] != nil {
             return
         }
-        
-        // Si no está en caché, buscar en Firestore
+
         db.collection("accounts").document(fromAccountID).getDocument { (document, error) in
             if let document = document, document.exists {
                 let accountName = document.data()?["name"] as? String ?? "Unknown Account"
                 DispatchQueue.main.async {
-                    self.accounts[fromAccountID] = accountName  // Almacenar en el diccionario para uso futuro
+                    self.accounts[fromAccountID] = accountName
                 }
             } else {
                 print("Account not found for ID: \(fromAccountID)")

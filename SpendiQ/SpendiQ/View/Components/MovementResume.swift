@@ -3,6 +3,7 @@ import SwiftUI
 struct MovementResume: View {
     var transaction: Transaction  // Obtenemos un objeto Transaction desde el ViewModel
     @ObservedObject var viewModel: TransactionViewModel  // Referencia al ViewModel para datos adicionales
+    @State private var showEditForm = false  // For sheet presentation
 
     var body: some View {
         HStack (spacing: 4 ){
@@ -51,6 +52,17 @@ struct MovementResume: View {
                     .foregroundStyle(.primarySpendiq)
             }
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            showEditForm = true
+        }
+        .sheet(isPresented: $showEditForm) {
+            EditTransactionForm(
+                bankAccountViewModel: BankAccountViewModel(),
+                transactionViewModel: viewModel,
+                transaction: transaction
+            )
+        }
         .onAppear {
             // Asegurarnos de que se cargue el nombre de la cuenta si no está ya en el diccionario
             if viewModel.accounts[transaction.fromAccountID] == nil {
@@ -67,9 +79,9 @@ struct MovementResume: View {
         case "Income":
             return "🍾"
         case "Transaction":
-            return "3"
+            return "🔄"
         default:
-            return "4"  // Emoji por defecto si no coincide con ningún tipo
+            return "❓"  // Emoji por defecto si no coincide con ningún tipo
         }
     }
 
@@ -82,5 +94,15 @@ struct MovementResume: View {
 }
 
 #Preview {
-    MovementResume(transaction: Transaction(transactionName: "Juan Valdez cafe", amount: 10000, fromAccountID: "Bancolombia", toAccountID: nil, transactionType: "expense", dateTime: Date()), viewModel: TransactionViewModel())
+    MovementResume(
+        transaction: Transaction(
+            transactionName: "Juan Valdez cafe",
+            amount: 10000,
+            fromAccountID: "Bancolombia",
+            toAccountID: nil,
+            transactionType: "Expense",
+            dateTime: Date()
+        ),
+        viewModel: TransactionViewModel()
+    )
 }

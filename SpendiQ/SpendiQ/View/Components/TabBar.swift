@@ -28,7 +28,7 @@ struct TabBar: View {
                     }
                 //.sheet depsliega una vista modal
                     .sheet(isPresented: $showSheet) {
-                        EditTransactionForm(bankAccountViewModel: BankAccountViewModel())
+                        EditTransactionForm(bankAccountViewModel: BankAccountViewModel(), transactionViewModel: TransactionViewModel())
                             .presentationDetents([.large])
                             .presentationDragIndicator(.visible)
                     }

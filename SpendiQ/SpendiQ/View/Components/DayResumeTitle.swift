@@ -1,10 +1,3 @@
-//
-//  DayResume.swift
-//  SpendiQ
-//
-//  Created by Juan Salguero on 27/09/24.
-//
-
 import SwiftUI
 
 struct DayResumeTitle: View {
@@ -13,24 +6,26 @@ struct DayResumeTitle: View {
     @State var Day: String = "Sep 13, 2024"
     var body: some View {
         Divider()
-            .frame(width: 361)
+            .padding(.leading,16)
+            .padding(.trailing,16)
         HStack{
             Text("\(Day)")
                 .padding(.leading,16)
-                .font(.system(size: 16))
+                .font(.system(size: 18))
             Spacer()
             Text("$ \(Expenses)")
                 .foregroundStyle(.red)
                 .fontWeight(.semibold)
             Text("$ \(Incomes)")
                 .padding(.trailing,16)
-                .font(.system(size: 16))
+                .font(.system(size: 18))
                 .foregroundStyle(.primarySpendiq)
                 .fontWeight(.semibold)
         }
-            
+
         Divider()
-            .frame(width: 361)
+            .padding(.leading,16)
+            .padding(.trailing,16)
     }
 }
 

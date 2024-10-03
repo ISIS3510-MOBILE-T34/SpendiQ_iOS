@@ -20,7 +20,7 @@ struct GraphBox: View {
     var body: some View {
         VStack {
             GeometryReader { geometry in
-                HStack(spacing: 10) {
+                HStack(spacing: 25) {
                     ForEach(0..<views.count, id: \.self) { index in
                         VStack {
         
@@ -34,13 +34,13 @@ struct GraphBox: View {
                                 chartView(data: maxData)
                             }
                         }
-                        .frame(width: 361, height: 264)
+                        .frame(width: 375, height: 264)
                         .cornerRadius(10)
                         .shadow(radius: 10)
                     }
                 }
-                .padding(.horizontal, (geometry.size.width - 361) / 2)
-                .offset(x: -CGFloat(currentIndex) * (361 + 10))
+                .padding(.horizontal, (geometry.size.width - 375) / 2)
+                .offset(x: -CGFloat(currentIndex) * (375 + 10))
                 .gesture(
                     DragGesture()
                         .onEnded { value in
@@ -69,11 +69,11 @@ struct GraphBox: View {
                             .background(selectedTimeFrame == frame ? Color.blue.opacity(0.1) : Color.clear)
                             .cornerRadius(20)
                             .foregroundColor(selectedTimeFrame == frame ? .blue : .gray)
-                            .font(.system(size: 12))
+                            .font(.system(size: 14))
                     }
                 }
             }
-            .frame(width: 361, height: 48)
+            .frame(width: 380, height: 48)
             .background(Color.gray.opacity(0.1))
             .cornerRadius(14)
         }
@@ -97,7 +97,7 @@ struct GraphBox: View {
                 .lineStyle(StrokeStyle(lineWidth: 2))
             }
         }
-        .frame(width: 350, height: 180)
+        .frame(width: 370, height: 180)
         .cornerRadius(10)
         .padding(.bottom,30)
     }

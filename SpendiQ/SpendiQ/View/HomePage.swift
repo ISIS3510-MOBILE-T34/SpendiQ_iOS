@@ -16,6 +16,7 @@ struct HomePage: View {
                         .font(.custom("SF Pro", size: 19))
                         .fontWeight(.regular)
                         .padding(.leading,86)
+                        .foregroundStyle(.black)
                     
                     Image(systemName: "bell.fill")
                         .padding(.leading,50)
