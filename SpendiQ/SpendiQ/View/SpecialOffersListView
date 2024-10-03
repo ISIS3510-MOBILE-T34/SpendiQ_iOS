@@ -33,3 +33,10 @@ struct SpecialOffersListView: View {
         .navigationBarTitle("Special Offers", displayMode: .inline)
     }
 }
+
+struct SpecialOffersListView_Previews: PreviewProvider {
+    static var previews: some View {
+        let viewModel = SpecialOffersViewModel()
+        SpecialOffersListView(viewModel: viewModel)
+    }
+}
