@@ -6,13 +6,17 @@
 //
 
 import SwiftUI
+import LocalAuthentication
 
 struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var email = ""
-    @State private var password = ""
+    @StateObject private var viewModel = AuthenticationViewModel()
     @State private var rememberMe = false
-    
+    @State private var isUnlocked = false
+    @State private var showForgotPassword = false
+    @State private var showPrivacy = false
+    @State private var showHelp = false
+
     var body: some View {
         ZStack {
             Color(hex: "FFFFFF").edgesIgnoringSafeArea(.all)
@@ -64,8 +68,8 @@ struct LoginView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Email")
-                        .font(.custom("SFProText-Regular", size: 14))
-                    TextField("Email...", text: $email)
+                        .font(.custom("SFProText-Regular", size: 18))
+                    TextField("Email...", text: $viewModel.email)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
@@ -74,8 +78,8 @@ struct LoginView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Password")
-                        .font(.custom("SFProText-Regular", size: 14))
-                    SecureField("Password...", text: $password)
+                        .font(.custom("SFProText-Regular", size: 18))
+                    SecureField("Password...", text: $viewModel.password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .foregroundColor(Color(hex: "65558F"))
                 }
@@ -88,7 +92,7 @@ struct LoginView: View {
                 }
                 
                 Button(action: {
-                    // TODO: Implement login action
+                    viewModel.login()
                 }) {
                     Text("Log In")
                         .frame(maxWidth: .infinity)
@@ -100,10 +104,26 @@ struct LoginView: View {
                 }
                 .padding(.top, 20)
                 
+                // Botón de Face ID
+                Button(action: authenticateWithFaceID) {
+                    HStack {
+                        Image(systemName: "faceid")
+                            .foregroundColor(.white)
+                        Text("Log in with Face ID")
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(hex: "65558F"))
+                    .cornerRadius(10)
+                    .font(.custom("SFProText-Regular", size: 18))
+                }
+                .padding(.top, 10)
+                
                 HStack {
                     Spacer()
                     Button(action: {
-                        // TODO: Implement forgot password action
+                        showForgotPassword = true
                     }) {
                         Text("Forgot your ID or password?")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -113,12 +133,19 @@ struct LoginView: View {
                 }
                 .padding(.top, 10)
                 
+
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.custom("SFProText-Regular", size: 14))
+                }
+                
                 Spacer()
                 
                 HStack {
                     Spacer()
                     Button(action: {
-                        // TODO: Implement privacy action
+                        showPrivacy = true
                     }) {
                         Text("Privacy")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -127,7 +154,7 @@ struct LoginView: View {
                     Text("|")
                         .foregroundColor(Color(hex: "65558F"))
                     Button(action: {
-                        // TODO: Implement help action
+                        showHelp = true
                     }) {
                         Text("Help")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -139,6 +166,40 @@ struct LoginView: View {
             .padding(.horizontal, 40)
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordView()
+        }
+        .sheet(isPresented: $showPrivacy) {
+            PrivacyView()
+        }
+        .sheet(isPresented: $showHelp) {
+            HelpView()
+        }
+    }
+    
+    private func authenticateWithFaceID() {
+        let context = LAContext()
+        var error: NSError?
+        
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            let reason = "Log in to your account"
+            
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                DispatchQueue.main.async {
+                    if success {
+                        // Aquí deberías implementar la lógica para iniciar sesión automáticamente
+                        // Por ejemplo, podrías tener un método en el viewModel para iniciar sesión con Face ID
+                        // viewModel.loginWithFaceID()
+                    } else {
+                        // Manejar el error de autenticación
+                        viewModel.errorMessage = "Face ID authentication failed"
+                    }
+                }
+            }
+        } else {
+            // Face ID no está disponible
+            viewModel.errorMessage = "Face ID is not available on this device"
+        }
     }
 }
 
