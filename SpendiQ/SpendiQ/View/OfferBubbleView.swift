@@ -37,7 +37,7 @@ struct OfferBubbleView: View {
                     .padding(.horizontal)
                 }
             }
-            .navigationTitle("Offers")
+
         }
     }
 }
