@@ -9,10 +9,14 @@ import SwiftUI
 
 struct PromosPage: View {
     var body: some View {
-        Text("This is the promos page")
+        VStack {
+            OfferBubbleView(viewModel: OfferViewModel(mockData: false))
+                .padding()
+        }
     }
 }
 
 #Preview {
     PromosPage()
 }
+

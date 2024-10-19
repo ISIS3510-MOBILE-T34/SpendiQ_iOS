@@ -43,8 +43,6 @@
 			membershipExceptions = (
 				Services/DataService.swift,
 				Services/LocationManager.swift,
-				View/OfferBubbleView.swift,
-				View/OfferDetailView.swift,
 				View/SpecialOffersAlertView.swift,
 				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
@@ -61,8 +59,6 @@
 			membershipExceptions = (
 				Services/DataService.swift,
 				Services/LocationManager.swift,
-				View/OfferBubbleView.swift,
-				View/OfferDetailView.swift,
 				View/SpecialOffersAlertView.swift,
 				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
@@ -253,6 +249,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				27D3DBB62CA5E56F005FCD91 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				8994F79A2CC3332900B33F59 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 27D3DB862CA5E4BB005FCD91 /* Products */;
@@ -621,6 +618,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 11.2.0;
+			};
+		};
+		8994F79A2CC3332900B33F59 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.1.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

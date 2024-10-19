@@ -2,54 +2,49 @@
 //  OfferBubbleView.swift
 //  SpendiQ
 //
-//  Created by Estudiantes on 25/09/24.
+//  Created by Alonso Hernandez on 30/09/24.
 //
 
 import SwiftUI
 
 struct OfferBubbleView: View {
-    var offer: OfferModel
-    
+    @ObservedObject var viewModel = OfferViewModel(mockData: false)
+
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(offer.placeName)
-                    .font(.title3)
-                    .bold()
-                if let distance = offer.distance {
-                    Text("\(Int(distance)) meters away")
-                        .font(.subheadline)
-                }
-                Text(offer.offerDescription)
+        NavigationView { // Wrap the entire view in NavigationView
+            VStack {
+                Text("Special Sales in your Area")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top, 20)
+
+                Text("Based on the shops where you have purchased before, we think these sales near to your location may interest you. Touch one for more information!")
                     .font(.body)
-                Text("Recommended because \(offer.recommendationReason)")
-                    .font(.footnote)
-                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 20)
+
+                if viewModel.isLoading {
+                    ProgressView("Loading offers...")
+                        .padding(.top, 50)
+                } else {
+                    ScrollView {
+                        ForEach(viewModel.offers) { offer in
+                            OfferCardView(offer: offer)
+                                .padding(.vertical, 8)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
             }
-            Spacer()
-            Image(offer.logoName)
-                .resizable()
-                .frame(width: 50, height: 50)
+            .navigationTitle("Offers")
         }
-        .padding()
-        .frame(width: 361, height: 180)
-        .background(Color(.systemGray6))
-        .cornerRadius(15)
-        .padding(.vertical, 11)
     }
 }
 
 struct OfferBubbleView_Previews: PreviewProvider {
     static var previews: some View {
-        let offer = OfferModel(
-            id: "1",
-            placeName: "McDonald's Parque 93",
-            offerDescription: "Get 20% off on all meals!",
-            recommendationReason: "you have bought 30 times in the last month",
-            logoName: "mcdonalds",
-            latitude: 0.0,
-            longitude: 0.0
-        )
-        OfferBubbleView(offer: offer)
-    }
+        OfferBubbleView(viewModel: OfferViewModel(mockData: false))
+        }
 }
+
