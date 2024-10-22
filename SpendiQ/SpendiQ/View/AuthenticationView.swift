@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AuthenticationView: View {
     @StateObject private var viewModel = AuthenticationViewModel()
-    @State private var showSignUp = false
+    @EnvironmentObject var appState: AppState
     
     var body: some View {
         NavigationStack {
@@ -52,7 +52,7 @@ struct AuthenticationView: View {
                         .padding(.bottom, 100)
                     
                     VStack(spacing: 20) {
-                        NavigationLink(destination: LoginView()) {
+                        NavigationLink(destination: LoginView().environmentObject(appState)) {
                             Text("Log In")
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -62,7 +62,7 @@ struct AuthenticationView: View {
                                 .font(.custom("SFProText-Regular", size: 18))
                         }
                         
-                        NavigationLink(destination: SignUpView()) {
+                        NavigationLink(destination: SignUpView().environmentObject(appState)) {
                             Text("Sign Up")
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -78,7 +78,12 @@ struct AuthenticationView: View {
                     Spacer()
                 }
             }
-            .navigationBarHidden(true)
+        }
+        .onChange(of: appState.isAuthenticated) { oldValue, newValue in
+            if newValue {
+                // El usuario se ha autenticado
+                // RootView se encargará de mostrar ContentView
+            }
         }
     }
 }
@@ -113,5 +118,6 @@ extension Color {
 struct AuthenticationView_Previews: PreviewProvider {
     static var previews: some View {
         AuthenticationView()
+            .environmentObject(AppState())
     }
 }

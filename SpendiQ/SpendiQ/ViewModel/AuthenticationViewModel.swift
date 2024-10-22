@@ -6,11 +6,11 @@
 //
 import Foundation
 import Combine
+import SwiftUI
 
 class AuthenticationViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
-    @Published var isAuthenticated: Bool = false
     @Published var errorMessage: String?
     
     private var cancellables = Set<AnyCancellable>()
@@ -20,7 +20,7 @@ class AuthenticationViewModel: ObservableObject {
         self.authService = authService
     }
     
-    func login() {
+    func login(appState: AppState) {
         authService.login(email: email, password: password)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
@@ -28,16 +28,17 @@ class AuthenticationViewModel: ObservableObject {
                 case .finished:
                     break
                 case .failure(let error):
-
                     self?.errorMessage = error.localizedDescription
                 }
-            } receiveValue: { [weak self] success in
-                self?.isAuthenticated = success
+            } receiveValue: { success in
+                if success {
+                    appState.isAuthenticated = true
+                }
             }
             .store(in: &cancellables)
     }
     
-    func signUp() {
+    func signUp(appState: AppState) {
         authService.signUp(email: email, password: password)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
@@ -47,8 +48,10 @@ class AuthenticationViewModel: ObservableObject {
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }
-            } receiveValue: { [weak self] success in
-                self?.isAuthenticated = success
+            } receiveValue: { success in
+                if success {
+                    appState.isAuthenticated = true
+                }
             }
             .store(in: &cancellables)
     }
@@ -92,6 +95,34 @@ class AuthenticationViewModel: ObservableObject {
                     self?.errorMessage = error.localizedDescription
                 }
             } receiveValue: { _ in }
+            .store(in: &cancellables)
+    }
+    
+    func loginWithFaceID(appState: AppState) {
+        // Implementa la lógica para iniciar sesión con Face ID
+        // Esto podría implicar recuperar credenciales almacenadas de forma segura
+        // y luego llamar a la función de login
+        // Por ahora, simplemente simularemos un inicio de sesión exitoso
+        DispatchQueue.main.async {
+            appState.isAuthenticated = true
+        }
+    }
+    
+    func logout(appState: AppState) {
+        authService.logout()
+            .receive(on: DispatchQueue.main)
+            .sink { completion in
+                switch completion {
+                case .finished:
+                    break
+                case .failure(let error):
+                    print("Logout error: \(error.localizedDescription)")
+                }
+            } receiveValue: { success in
+                if success {
+                    appState.isAuthenticated = false
+                }
+            }
             .store(in: &cancellables)
     }
 }

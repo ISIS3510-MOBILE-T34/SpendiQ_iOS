@@ -1,8 +1,10 @@
 // HomePage.swift
 
 import SwiftUI
+import FirebaseAuth
 
 struct HomePage: View {
+    @EnvironmentObject var appState: AppState
     @State private var currentIndex: Int = 0
     @State private var CurrentBalance: Int = 0
     @ObservedObject private var viewModel = TransactionViewModel()
@@ -61,6 +63,14 @@ struct HomePage: View {
             }
             .onReceive(bankAccountViewModel.objectWillChange) { _ in
                 // Update the balance when the bankAccountViewModel changes
+                Button("Log Out") {
+                    do {
+                        try Auth.auth().signOut()
+                        // AppState se actualizará automáticamente debido al listener
+                    } catch {
+                        print("Error signing out: \(error.localizedDescription)")
+                    }
+                }
             }
         }
     }
