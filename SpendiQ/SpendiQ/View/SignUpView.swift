@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SignUpView: View {
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = AuthenticationViewModel()
     @State private var firstName = ""
     @State private var lastName = ""
@@ -101,7 +102,7 @@ struct SignUpView: View {
                 
                 Button(action: {
                     if agreeToTerms {
-                        viewModel.signUp()
+                        viewModel.signUp(appState: appState)
                     } else {
                         viewModel.errorMessage = "Please agree to the Terms & Conditions"
                     }
@@ -136,5 +137,6 @@ struct SignUpView: View {
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
         SignUpView()
+            .environmentObject(AppState())
     }
 }

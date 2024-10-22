@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseFirestore
+import FirebaseAuth
 
 class UserViewModel: ObservableObject {
     @Published var user: User? = nil
@@ -18,6 +19,7 @@ class UserViewModel: ObservableObject {
             self.user = User(
                 id: "1",
                 name: "Alonso Hernandez",
+                email: "alonso@example.com",
                 profilePicture: "https://avatars.githubusercontent.com/u/98569502?v=4" // Example URL for the profile picture
             )
             self.isLoading = false
@@ -27,19 +29,29 @@ class UserViewModel: ObservableObject {
     }
     
     func fetchUserFromFirebase() {
+        guard let currentUser = Auth.auth().currentUser else {
+            self.isLoading = false
+            return
+        }
+        
         let db = Firestore.firestore()
-        db.collection("users").document("user_id") // Replace "user_id" with actual user ID
+        db.collection("users").document(currentUser.uid)
             .getDocument { snapshot, error in
                 if let error = error {
                     print("Error fetching user: \(error)")
+                    self.isLoading = false
                     return
                 }
                 
-                guard let data = snapshot?.data() else { return }
+                guard let data = snapshot?.data() else {
+                    self.isLoading = false
+                    return
+                }
                 
                 self.user = User(
                     id: snapshot?.documentID ?? "",
                     name: data["name"] as? String ?? "",
+                    email: data["email"] as? String ?? currentUser.email ?? "",
                     profilePicture: data["profilePicture"] as? String ?? ""
                 )
                 self.isLoading = false

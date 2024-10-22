@@ -4,6 +4,7 @@
 //
 //  Created by Daniel Clavijo on 30/09/24.
 //
+
 import Foundation
 import Combine
 import FirebaseAuth
@@ -14,6 +15,8 @@ protocol AuthenticationServiceProtocol {
     func resetPassword(email: String) -> AnyPublisher<Void, Error>
     func verifyResetCode(code: String) -> AnyPublisher<Void, Error>
     func confirmPasswordReset(code: String, newPassword: String) -> AnyPublisher<Void, Error>
+    func logout() -> AnyPublisher<Bool, Error>
+    func getCurrentUser() -> User?
 }
 
 class AuthenticationService: AuthenticationServiceProtocol {
@@ -62,7 +65,6 @@ class AuthenticationService: AuthenticationServiceProtocol {
     func verifyResetCode(code: String) -> AnyPublisher<Void, Error> {
         Deferred {
             Future { promise in
-                // El método devuelve (String?, Error?), ambos deben ser manejados
                 Auth.auth().verifyPasswordResetCode(code) { result, error in
                     if let error = error {
                         promise(.failure(error))
@@ -86,5 +88,25 @@ class AuthenticationService: AuthenticationServiceProtocol {
                 }
             }
         }.eraseToAnyPublisher()
+    }
+    
+    func logout() -> AnyPublisher<Bool, Error> {
+        Deferred {
+            Future { promise in
+                do {
+                    try Auth.auth().signOut()
+                    promise(.success(true))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+    func getCurrentUser() -> User? {
+        guard let firebaseUser = Auth.auth().currentUser else {
+            return nil
+        }
+        return User(from: firebaseUser)
     }
 }

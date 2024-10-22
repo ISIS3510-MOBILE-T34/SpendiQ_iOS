@@ -1,39 +1,44 @@
 import SwiftUI
+import FirebaseAuth
 
 struct ContentView: View {
+    @EnvironmentObject var appState: AppState
     @State private var selectedTab: String = "Home"
     
     var body: some View {
-        
-        NavigationView{
+        NavigationView {
             VStack {
-                
                 Header(viewModel: UserViewModel(mockData: true))
                 
-                if selectedTab == "Home" {
+                switch selectedTab {
+                case "Home":
                     HomePage()
                         .onAppear {
                             NotificationManager.shared.requestNotificationPermission()
                             NotificationManager.shared.scheduleTestMessage()
                         }
-                        
-                } else if selectedTab == "Promos" {
+                case "Promos":
                     PromosPage()
-                } else if selectedTab == "Accounts" {
+                case "Accounts":
                     AccountsPage()
-                } else if selectedTab == "Profile" {
+                case "Profile":
                     ProfilePage()
+                default:
+                    EmptyView()
                 }
                 
+                Spacer()
+                
+                TabBar(selectedTab: $selectedTab)
             }
+            .navigationBarItems(trailing: Button("Log Out") {
+                do {
+                    try Auth.auth().signOut()
+                    appState.isAuthenticated = false
+                } catch {
+                    print("Error signing out: \(error.localizedDescription)")
+                }
+            })
         }
-        
-        Spacer()
-        TabBar(selectedTab: $selectedTab)
-        
     }
-}
-
-#Preview {
-    ContentView()
 }
