@@ -5,26 +5,33 @@
 //  Created by Fai on 25/09/24.
 //
 
+//  UserModel.swift
 import Foundation
 import FirebaseAuth
 
-struct User: Identifiable {
-    var id: String // Firestore document ID
-    var name: String
+struct User {
+    var id: String
+    var fullName: String
     var email: String
-    var profilePicture: String // URL for the profile picture
-
-    init(id: String, name: String, email: String, profilePicture: String) {
+    var phoneNumber: String
+    var birthDate: String
+    var registrationDate: Date
+    
+    init(id: String, fullName: String, email: String, phoneNumber: String, birthDate: String, registrationDate: Date = Date()) {
         self.id = id
-        self.name = name
+        self.fullName = fullName
         self.email = email
-        self.profilePicture = profilePicture
+        self.phoneNumber = phoneNumber
+        self.birthDate = birthDate
+        self.registrationDate = registrationDate
     }
-
+    
     init?(from firebaseUser: FirebaseAuth.User) {
         self.id = firebaseUser.uid
-        self.name = firebaseUser.displayName ?? ""
         self.email = firebaseUser.email ?? ""
-        self.profilePicture = firebaseUser.photoURL?.absoluteString ?? ""
+        self.fullName = firebaseUser.displayName ?? ""
+        self.phoneNumber = firebaseUser.phoneNumber ?? ""
+        self.birthDate = ""
+        self.registrationDate = firebaseUser.metadata.creationDate ?? Date()
     }
 }

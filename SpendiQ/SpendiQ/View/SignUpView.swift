@@ -15,6 +15,20 @@ struct SignUpView: View {
     @State private var lastName = ""
     @State private var agreeToTerms = false
     @State private var showTermsAndConditions = false
+    @State private var phoneNumber = ""
+    @State private var birthDate = Date()
+    
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter
+    }()
+    
+    private let birthDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/M/yyyy"
+        return formatter
+    }()
     
     var body: some View {
         ZStack {
@@ -70,6 +84,24 @@ struct SignUpView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 10) {
+                    Text("Phone Number")
+                        .font(.custom("SFProText-Regular", size: 18))
+                    TextField("Enter your phone number...", text: $viewModel.phoneNumber)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .keyboardType(.phonePad)
+                }
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Birth Date")
+                        .font(.custom("SFProText-Regular", size: 18))
+                    DatePicker("", selection: $birthDate, displayedComponents: .date)
+                        .datePickerStyle(DefaultDatePickerStyle())
+                        .onChange(of: birthDate) { oldValue, newValue in
+                            viewModel.birthDate = birthDateFormatter.string(from: newValue)
+                        }
+                }
+                
+                VStack(alignment: .leading, spacing: 10) {
                     Text("Email Address")
                         .font(.custom("SFProText-Regular", size: 18))
                     TextField("you@example.com", text: $viewModel.email)
@@ -102,6 +134,7 @@ struct SignUpView: View {
                 
                 Button(action: {
                     if agreeToTerms {
+                        viewModel.fullName = firstName + " " + lastName
                         viewModel.signUp(appState: appState)
                     } else {
                         viewModel.errorMessage = "Please agree to the Terms & Conditions"

@@ -11,6 +11,9 @@ import SwiftUI
 class AuthenticationViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
+    @Published var fullName: String = ""
+    @Published var phoneNumber: String = ""
+    @Published var birthDate: String = ""
     @Published var errorMessage: String?
     
     private var cancellables = Set<AnyCancellable>()
@@ -39,21 +42,27 @@ class AuthenticationViewModel: ObservableObject {
     }
     
     func signUp(appState: AppState) {
-        authService.signUp(email: email, password: password)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] completion in
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                }
-            } receiveValue: { success in
-                if success {
-                    appState.isAuthenticated = true
-                }
+        authService.signUp(
+            email: email,
+            password: password,
+            fullName: fullName,
+            phoneNumber: phoneNumber,
+            birthDate: birthDate
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] completion in
+            switch completion {
+            case .finished:
+                break
+            case .failure(let error):
+                self?.errorMessage = error.localizedDescription
             }
-            .store(in: &cancellables)
+        } receiveValue: { success in
+            if success {
+                appState.isAuthenticated = true
+            }
+        }
+        .store(in: &cancellables)
     }
     
     func resetPassword() {
