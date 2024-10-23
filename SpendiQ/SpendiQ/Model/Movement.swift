@@ -8,4 +8,7 @@ struct Transaction: Codable, Identifiable {
     var toAccountID: String?
     var transactionType: String
     var dateTime: Date
+    var latitude: Double?
+    var longitude: Double?
+    var shopID: String?
 }

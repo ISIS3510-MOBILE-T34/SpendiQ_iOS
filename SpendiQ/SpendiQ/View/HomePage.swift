@@ -66,7 +66,7 @@ struct HomePage: View {
                 Button("Log Out") {
                     do {
                         try Auth.auth().signOut()
-                        // AppState se actualizará automáticamente debido al listener
+                        
                     } catch {
                         print("Error signing out: \(error.localizedDescription)")
                     }
