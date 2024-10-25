@@ -2,14 +2,19 @@
 
 import FirebaseFirestore
 import FirebaseAuth
+import CoreLocation
 
 class TransactionViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var transactionsByDay: [String: [Transaction]] = [:]
     @Published var totalByDay: [String: Float] = [:]
     @Published var accounts: [String: String] = [:]
+    
     private let db = Firestore.firestore()
     private let bankAccountViewModel = BankAccountViewModel()
+    
+    // Usamos el LocationManager personalizado en lugar de CLLocationManager
+    private let locationManager = LocationManager()
     
     func getTransactionsForAllAccounts() {
         guard let userId = Auth.auth().currentUser?.uid else {
@@ -72,6 +77,9 @@ class TransactionViewModel: ObservableObject {
             print("Usuario no autenticado")
             return
         }
+        
+        // Obtener la última ubicación conocida del LocationManager personalizado
+        let location = locationManager.location
 
         let newTransaction = Transaction(
             transactionName: transactionName,
@@ -79,7 +87,9 @@ class TransactionViewModel: ObservableObject {
             fromAccountID: fromAccountID ?? "",
             toAccountID: toAccountID,
             transactionType: transactionType,
-            dateTime: dateTime
+            dateTime: dateTime,
+            latitude: location?.coordinate.latitude,  // Usar latitud si está disponible
+            longitude: location?.coordinate.longitude // Usar longitud si está disponible
         )
 
         do {

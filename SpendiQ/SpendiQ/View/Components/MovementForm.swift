@@ -1,12 +1,14 @@
 // MovementForm.swift
 
 import SwiftUI
+import CoreLocation
 
 struct MovementForm: View {
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
 
     var body: some View {
         EditTransactionForm(
+            
             bankAccountViewModel: bankAccountViewModel,
             transactionViewModel: TransactionViewModel(),
             transaction: nil
@@ -18,6 +20,7 @@ struct MovementForm: View {
 
 
 struct EditTransactionForm: View {
+    var locationManager: CLLocationManager = CLLocationManager()
     @Environment(\.dismiss) var dismiss
     @State private var transactionType: String = "Expense"
     @State private var transactionName: String = ""

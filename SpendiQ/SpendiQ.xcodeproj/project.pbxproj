@@ -42,7 +42,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Services/DataService.swift,
-				Services/LocationManager.swift,
 				View/SpecialOffersAlertView.swift,
 				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
@@ -58,7 +57,6 @@
 			buildPhase = 27D3DB832CA5E4BB005FCD91 /* Resources */;
 			membershipExceptions = (
 				Services/DataService.swift,
-				Services/LocationManager.swift,
 				View/SpecialOffersAlertView.swift,
 				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
