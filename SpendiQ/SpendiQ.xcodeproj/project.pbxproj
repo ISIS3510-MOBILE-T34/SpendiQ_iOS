@@ -56,8 +56,8 @@
 		27FF2E512CAE57FA00A7ACB8 /* Exceptions for "SpendiQ" folder in "SpendiQ" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Info.plist,
 				Services/DataService.swift,
-				Services/LocationManager.swift,
 				View/SpecialOffersAlertView.swift,
 				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
@@ -73,7 +73,6 @@
 			buildPhase = 27D3DB832CA5E4BB005FCD91 /* Resources */;
 			membershipExceptions = (
 				Services/DataService.swift,
-				Services/LocationManager.swift,
 				View/SpecialOffersAlertView.swift,
 				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
@@ -486,7 +485,10 @@
 				DEVELOPMENT_TEAM = 84BH7BWX4T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpendiQ/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SpendiQ;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"We need your location to show offers even when the app is not in use.\"";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"We need your location to show nearby offers and shops.\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -518,7 +520,10 @@
 				DEVELOPMENT_TEAM = 84BH7BWX4T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpendiQ/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SpendiQ;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"We need your location to show offers even when the app is not in use.\"";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"We need your location to show nearby offers and shops.\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

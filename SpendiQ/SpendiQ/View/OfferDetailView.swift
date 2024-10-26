@@ -76,7 +76,8 @@ struct OfferDetailView_Previews: PreviewProvider {
             shopImage: "https://pbs.twimg.com/profile_images/1798086490502643712/ntN62oCw_400x400.jpg", // Example URL for McDonald's image
             latitude: 4.676, // Example coordinates for the map
             longitude: -74.048,
-            distance: 500
+            distance: 500,
+            shopReference: "shops/25epsfpOrxLY9rfntnRa"
         ))
     }
 }
