@@ -13,6 +13,7 @@
 		27FF2E4E2CAE57E600A7ACB8 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4D2CAE57E600A7ACB8 /* FirebaseFirestore */; };
 		27FF2E502CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4F2CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community */; };
 		8969EDD82CCD675C00C1A40D /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 8969EDD72CCD675C00C1A40D /* Alamofire */; };
+		8969EDE12CCD6DDF00C1A40D /* DotEnv in Frameworks */ = {isa = PBXBuildFile; productRef = 8969EDE02CCD6DDF00C1A40D /* DotEnv */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -112,6 +113,7 @@
 				27FF2E4E2CAE57E600A7ACB8 /* FirebaseFirestore in Frameworks */,
 				27FF2E4C2CAE57E600A7ACB8 /* FirebaseCore in Frameworks */,
 				8969EDD82CCD675C00C1A40D /* Alamofire in Frameworks */,
+				8969EDE12CCD6DDF00C1A40D /* DotEnv in Frameworks */,
 				27FF2E502CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community in Frameworks */,
 				273719F32CAE55D400DD05DB /* FirebaseAuth in Frameworks */,
 			);
@@ -189,6 +191,7 @@
 				27FF2E4D2CAE57E600A7ACB8 /* FirebaseFirestore */,
 				27FF2E4F2CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community */,
 				8969EDD72CCD675C00C1A40D /* Alamofire */,
+				8969EDE02CCD6DDF00C1A40D /* DotEnv */,
 			);
 			productName = SpendiQ;
 			productReference = 27D3DB852CA5E4BB005FCD91 /* SpendiQ.app */;
@@ -276,6 +279,7 @@
 				27D3DBB62CA5E56F005FCD91 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				8994F79A2CC3332900B33F59 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				8969EDD52CCD672300C1A40D /* XCRemoteSwiftPackageReference "Alamofire" */,
+				8969EDDF2CCD6DD600C1A40D /* XCRemoteSwiftPackageReference "DotEnv" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 27D3DB862CA5E4BB005FCD91 /* Products */;
@@ -660,6 +664,14 @@
 				minimumVersion = 5.10.1;
 			};
 		};
+		8969EDDF2CCD6DD600C1A40D /* XCRemoteSwiftPackageReference "DotEnv" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftpackages/DotEnv.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		8994F79A2CC3332900B33F59 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
@@ -700,6 +712,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 8969EDD52CCD672300C1A40D /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
+		};
+		8969EDE02CCD6DDF00C1A40D /* DotEnv */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8969EDDF2CCD6DD600C1A40D /* XCRemoteSwiftPackageReference "DotEnv" */;
+			productName = DotEnv;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

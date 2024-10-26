@@ -94,6 +94,10 @@ struct SignUpView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Phone Number")
                         .font(.custom("SFProText-Regular", size: 18))
+                    Text("- Country Code + number")
+                        .font(.custom("SFProText-Regular", size: 14))
+                    Text("- Example: 573118977713")
+                        .font(.custom("SFProText-Regular", size: 14))
                     TextField("Enter your phone number...", text: $viewModel.phoneNumber)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.phonePad)

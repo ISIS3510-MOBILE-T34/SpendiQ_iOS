@@ -32,8 +32,17 @@ struct SMSVerificationView: View {
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
+                    .font(.custom("SFProText-Regular", size: 14))
             }
         }
         .padding()
+    }
+}
+
+struct SMSVerificationView_Previews: PreviewProvider {
+    static var previews: some View {
+        SMSVerificationView()
+            .environmentObject(AppState())
+            .environmentObject(AuthenticationViewModel())
     }
 }

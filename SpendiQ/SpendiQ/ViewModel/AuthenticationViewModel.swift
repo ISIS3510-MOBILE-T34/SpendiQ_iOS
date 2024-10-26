@@ -85,10 +85,10 @@ class AuthenticationViewModel: ObservableObject {
                     if isValid {
                         appState.isAuthenticated = true
                     } else {
-                        self?.errorMessage = "Invalid verification code."
+                        self?.errorMessage = "Code is not valid, try again."
                     }
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
+                case .failure:
+                    self?.errorMessage = "Code is not valid, try again."
                 }
             }
         }

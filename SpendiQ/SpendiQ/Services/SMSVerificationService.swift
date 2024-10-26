@@ -7,11 +7,34 @@
 
 import Foundation
 import Alamofire
+import DotEnv
 
 class SMSVerificationService {
-    private let accountSID = "ACcff0644da0562e4093e8bd246de6dadd"
-    private let authToken = "f9f501d5a0487e1036ea82b4cef62375"
-    private let serviceSID = "VA89d3368a2ff79675dde69ccd98e0c260"
+    private let accountSID: String
+    private let authToken: String
+    private let serviceSID: String
+
+    init() {
+        do {
+            // Load the .env file from the bundle
+            if let path = Bundle.main.path(forResource: ".env", ofType: nil) {
+                try DotEnv.load(path: path)
+                self.accountSID = ProcessInfo.processInfo.environment["TWILIO_ACCOUNT_SID"] ?? ""
+                self.authToken = ProcessInfo.processInfo.environment["TWILIO_AUTH_TOKEN"] ?? ""
+                self.serviceSID = ProcessInfo.processInfo.environment["TWILIO_SERVICE_SID"] ?? ""
+            } else {
+                print(".env file not found")
+                self.accountSID = ""
+                self.authToken = ""
+                self.serviceSID = ""
+            }
+        } catch {
+            print("Failed to load .env file: \(error)")
+            self.accountSID = ""
+            self.authToken = ""
+            self.serviceSID = ""
+        }
+    }
 
     func sendVerificationCode(to phoneNumber: String, completion: @escaping (Result<Void, Error>) -> Void) {
         let formattedPhoneNumber = phoneNumber.starts(with: "+") ? phoneNumber : "+\(phoneNumber)"
@@ -39,7 +62,6 @@ class SMSVerificationService {
                 }
             }
     }
-
 
     func verifyCode(_ code: String, for phoneNumber: String, completion: @escaping (Result<Bool, Error>) -> Void) {
         let formattedPhoneNumber = phoneNumber.starts(with: "+") ? phoneNumber : "+\(phoneNumber)"
@@ -72,6 +94,4 @@ class SMSVerificationService {
                 }
             }
     }
-
-
 }
