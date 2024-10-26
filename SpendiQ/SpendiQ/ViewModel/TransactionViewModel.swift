@@ -1,5 +1,3 @@
-// TransactionViewModel.swift
-
 import FirebaseFirestore
 import FirebaseAuth
 import CoreLocation
@@ -7,13 +5,12 @@ import CoreLocation
 class TransactionViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var transactionsByDay: [String: [Transaction]] = [:]
-    @Published var totalByDay: [String: Float] = [:]
+    @Published var totalByDay: [String: Int64] = [:]
     @Published var accounts: [String: String] = [:]
+    @Published var isLoading = false // Indica si las transacciones están cargando
     
     private let db = Firestore.firestore()
     private let bankAccountViewModel = BankAccountViewModel()
-    
-    // Usamos el LocationManager personalizado en lugar de CLLocationManager
     private let locationManager = LocationManager()
     
     func getTransactionsForAllAccounts() {
@@ -21,14 +18,16 @@ class TransactionViewModel: ObservableObject {
             print("Usuario no autenticado")
             return
         }
-
+        
+        isLoading = true
         db.collection("users").document(userId).collection("accounts").getDocuments { (querySnapshot, error) in
             if let error = error {
                 print("Error al recuperar las cuentas: \(error.localizedDescription)")
+                self.isLoading = false
             } else {
                 var transactionsTemp: [Transaction] = []
                 var transactionsByDayTemp: [String: [Transaction]] = [:]
-                var totalByDayTemp: [String: Float] = [:]
+                var totalByDayTemp: [String: Int64] = [:]
 
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -45,18 +44,14 @@ class TransactionViewModel: ObservableObject {
 
                                 if let transaction = transaction {
                                     transactionsTemp.append(transaction)
-
-                                    let day = dateFormatter.string(from: transaction.dateTime)
-
+                                    let day = dateFormatter.string(from: transaction.dateTime.dateValue())
                                     if transactionsByDayTemp[day] != nil {
                                         transactionsByDayTemp[day]?.append(transaction)
                                     } else {
                                         transactionsByDayTemp[day] = [transaction]
                                     }
 
-                                    totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
-
-                                    self.getAccountName(fromAccountID: transaction.fromAccountID)
+                                    totalByDayTemp[day] = (totalByDayTemp[day] ?? 0) + transaction.amount
                                 }
                             }
                         }
@@ -65,6 +60,7 @@ class TransactionViewModel: ObservableObject {
                             self.transactions = transactionsTemp
                             self.transactionsByDay = transactionsByDayTemp
                             self.totalByDay = totalByDayTemp
+                            self.isLoading = false
                         }
                     }
                 }
@@ -72,24 +68,27 @@ class TransactionViewModel: ObservableObject {
         }
     }
     
-    func addTransaction(accountID: String, transactionName: String, amount: Float, fromAccountID: String?, toAccountID: String?, transactionType: String, dateTime: Date) {
+    func addTransaction(accountID: String, transactionName: String, amount: Int64, transactionType: String, dateTime: Timestamp, location: Location?) {
         guard let userId = Auth.auth().currentUser?.uid else {
             print("Usuario no autenticado")
             return
         }
         
-        // Obtener la última ubicación conocida del LocationManager personalizado
-        let location = locationManager.location
-
+        guard !accountID.isEmpty else {
+            print("Error: accountID está vacío")
+            return
+        }
+        
         let newTransaction = Transaction(
+            id: "", // Firestore asignará automáticamente el `id` al crear el documento
+            accountId: accountID,
             transactionName: transactionName,
             amount: amount,
-            fromAccountID: fromAccountID ?? "",
-            toAccountID: toAccountID,
-            transactionType: transactionType,
             dateTime: dateTime,
-            latitude: location?.coordinate.latitude,  // Usar latitud si está disponible
-            longitude: location?.coordinate.longitude // Usar longitud si está disponible
+            transactionType: transactionType,
+            location: location,
+            amountAnomaly: false,
+            locationAnomaly: false
         )
 
         do {
@@ -107,24 +106,26 @@ class TransactionViewModel: ObservableObject {
         }
     }
     
-    func updateTransaction(transaction: Transaction, transactionName: String, amount: Float, fromAccountID: String, toAccountID: String?, transactionType: String, dateTime: Date) {
+    func updateTransaction(transaction: Transaction, transactionName: String, amount: Int64, transactionType: String, dateTime: Timestamp, location: Location) {
         guard let userId = Auth.auth().currentUser?.uid else {
             print("Usuario no autenticado")
             return
         }
-        guard let transactionID = transaction.id else { return }
-
+        
         let updatedTransaction = Transaction(
+            id: transaction.id,
+            accountId: transaction.accountId,
             transactionName: transactionName,
             amount: amount,
-            fromAccountID: fromAccountID,
-            toAccountID: toAccountID,
+            dateTime: dateTime,
             transactionType: transactionType,
-            dateTime: dateTime
+            location: location,
+            amountAnomaly: transaction.amountAnomaly,
+            locationAnomaly: transaction.locationAnomaly
         )
 
         do {
-            try db.collection("users").document(userId).collection("accounts").document(fromAccountID).collection("transactions").document(transactionID).setData(from: updatedTransaction) { error in
+            try db.collection("users").document(userId).collection("accounts").document(transaction.accountId).collection("transactions").document(transaction.id ?? "").setData(from: updatedTransaction) { error in
                 if let error = error {
                     print("Error al actualizar la transacción: \(error.localizedDescription)")
                 } else {
@@ -164,75 +165,72 @@ class TransactionViewModel: ObservableObject {
         }
     }
     
-    func getAccountName(fromAccountID: String) {
+    func getAccountName(accountID: String) {
         guard let userId = Auth.auth().currentUser?.uid else {
             print("Usuario no autenticado")
             return
         }
 
-        if accounts[fromAccountID] != nil {
+        if accounts[accountID] != nil {
             return
         }
 
-        db.collection("users").document(userId).collection("accounts").document(fromAccountID).getDocument { (document, error) in
+        db.collection("users").document(userId).collection("accounts").document(accountID).getDocument { (document, error) in
             if let document = document, document.exists {
                 let accountName = document.data()?["name"] as? String ?? "Cuenta desconocida"
                 DispatchQueue.main.async {
-                    self.accounts[fromAccountID] = accountName
+                    self.accounts[accountID] = accountName
                 }
             } else {
-                print("Cuenta no encontrada para ID: \(fromAccountID)")
+                print("Cuenta no encontrada para ID: \(accountID)")
             }
         }
     }
     
-    private func updateAccountBalanceOnAdd(accountID: String, amount: Float, transactionType: String) {
-        var amountChange: Double = 0.0
+    private func updateAccountBalanceOnAdd(accountID: String, amount: Int64, transactionType: String) {
+        var amountChange: Int64 = 0
         
         if transactionType == "Expense" {
-            amountChange = -Double(amount)
+            amountChange = -amount
         } else if transactionType == "Income" {
-            amountChange = Double(amount)
+            amountChange = amount
         }
         
-        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: amountChange)
+        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: Double(amountChange))
     }
     
-    private func reverseAccountBalance(accountID: String, amount: Float, transactionType: String) {
-        var amountChange: Double = 0.0
+    private func reverseAccountBalance(accountID: String, amount: Int64, transactionType: String) {
+        var amountChange: Int64 = 0
         
         if transactionType == "Expense" {
-            amountChange = Double(amount)
+            amountChange = amount
         } else if transactionType == "Income" {
-            amountChange = -Double(amount)
+            amountChange = -amount
         }
         
-        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: amountChange)
+        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: Double(amountChange))
     }
     
     private func adjustAccountBalanceAfterEdit(oldTransaction: Transaction, newTransaction: Transaction) {
-        guard oldTransaction.fromAccountID == newTransaction.fromAccountID else {
-            // Handle account change if needed
+        guard oldTransaction.accountId == newTransaction.accountId else {
             return
         }
         
-        let accountID = newTransaction.fromAccountID
-        var amountChange: Double = 0.0
+        let accountID = newTransaction.accountId
+        var amountChange: Int64 = 0
         
-        // Reverse old transaction effect
         if oldTransaction.transactionType == "Expense" {
-            amountChange += Double(oldTransaction.amount)
+            amountChange += oldTransaction.amount
         } else if oldTransaction.transactionType == "Income" {
-            amountChange -= Double(oldTransaction.amount)
+            amountChange -= oldTransaction.amount
         }
         
-        // Apply new transaction effect
         if newTransaction.transactionType == "Expense" {
-            amountChange -= Double(newTransaction.amount)
+            amountChange -= newTransaction.amount
         } else if newTransaction.transactionType == "Income" {
-            amountChange += Double(newTransaction.amount)
+            amountChange += newTransaction.amount
         }
         
-        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: amountChange)
+        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: Double(amountChange))
     }
 }

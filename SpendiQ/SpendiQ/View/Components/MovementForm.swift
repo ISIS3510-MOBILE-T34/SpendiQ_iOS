@@ -1,14 +1,15 @@
-// MovementForm.swift
-
 import SwiftUI
+import FirebaseCore
 import CoreLocation
+import MapKit
 
 struct MovementForm: View {
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
+    private let locationManager = LocationManager() // Instancia de LocationManager
 
     var body: some View {
         EditTransactionForm(
-            
+            locationManager: locationManager,
             bankAccountViewModel: bankAccountViewModel,
             transactionViewModel: TransactionViewModel(),
             transaction: nil
@@ -16,26 +17,38 @@ struct MovementForm: View {
     }
 }
 
-// EditTransactionForm.swift
-
+// MARK: - EditTransactionForm
 
 struct EditTransactionForm: View {
-    var locationManager: CLLocationManager = CLLocationManager()
+    @ObservedObject var locationManager: LocationManager
     @Environment(\.dismiss) var dismiss
+
     @State private var transactionType: String = "Expense"
     @State private var transactionName: String = ""
-    @State private var amount: Float = 0.0
+    @State private var amount: Int64 = 0
     @State private var selectedAccountID: String = ""
     @State private var selectedTargetAccountID: String = ""
     @State private var selectedEmoji: String = ""
     @State private var selectedDateTime: Date = Date()
-    @FocusState private var isEmojiFieldFocused: Bool
+    @State private var transactionLocation: CLLocationCoordinate2D?
+    @State private var mapRegion: MKCoordinateRegion
+
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
     @ObservedObject var transactionViewModel: TransactionViewModel
     var transaction: Transaction?
-    
-    let transactionTypes = ["Expense", "Income", "Transaction"]
-    
+
+    init(locationManager: LocationManager, bankAccountViewModel: BankAccountViewModel, transactionViewModel: TransactionViewModel, transaction: Transaction?) {
+        self.locationManager = locationManager
+        self.bankAccountViewModel = bankAccountViewModel
+        self.transactionViewModel = transactionViewModel
+        self.transaction = transaction
+        
+        _mapRegion = State(initialValue: MKCoordinateRegion(
+            center: transaction?.location?.toCoordinate() ?? locationManager.location?.coordinate ?? CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0),
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        ))
+    }
+
     var body: some View {
         NavigationView {
             VStack(alignment: .center, spacing: 20) {
@@ -45,7 +58,7 @@ struct EditTransactionForm: View {
                     .padding(.top, 20)
                 
                 Picker("Select Type", selection: $transactionType) {
-                    ForEach(transactionTypes, id: \.self) { type in
+                    ForEach(["Expense", "Income", "Transaction"], id: \.self) { type in
                         Text(type).tag(type)
                     }
                 }
@@ -59,31 +72,21 @@ struct EditTransactionForm: View {
                     ZStack(alignment: .center) {
                         Circle()
                             .frame(width: 100, height: 100)
-                            .foregroundColor(.primarySpendiq)
+                            .foregroundColor(.yellow)
                         Text(selectedEmoji.isEmpty ? "🙂" : selectedEmoji)
                             .font(.system(size: 58))
                     }
-                    
-                    Button("Change icon") {
-                        isEmojiFieldFocused = true
-                    }
-                    .foregroundColor(.blue)
+                    Button("Change icon") {}
                 }
                 
                 Form {
-                    Section(header: Text("Transaction name")) {
+                    Section(header: Text("Transaction Name")) {
                         TextField("Transaction name", text: $transactionName)
-                            .frame(height: 32)
                     }
                     
                     Section(header: Text("Amount")) {
                         TextField("Amount", value: $amount, format: .number)
                             .keyboardType(.decimalPad)
-                            .onChange(of: amount) { oldValue, newValue in
-                                if newValue < 0 {
-                                    amount = 0.0
-                                }
-                            }
                     }
                     
                     Section(header: Text("Select Account")) {
@@ -94,11 +97,11 @@ struct EditTransactionForm: View {
                         }
                         .pickerStyle(MenuPickerStyle())
                         .onAppear {
-                            bankAccountViewModel.getBankAccounts()
-                        }
-                        .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
-                            if !newAccounts.isEmpty, selectedAccountID.isEmpty {
-                                selectedAccountID = newAccounts.first?.id ?? ""
+                            if bankAccountViewModel.accounts.isEmpty {
+                                bankAccountViewModel.getBankAccounts()
+                            }
+                            if selectedAccountID.isEmpty, let firstAccount = bankAccountViewModel.accounts.first {
+                                selectedAccountID = firstAccount.id ?? ""
                             }
                         }
                     }
@@ -111,11 +114,6 @@ struct EditTransactionForm: View {
                                 }
                             }
                             .pickerStyle(MenuPickerStyle())
-                            .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
-                                if !newAccounts.isEmpty, selectedTargetAccountID.isEmpty {
-                                    selectedTargetAccountID = newAccounts.first?.id ?? ""
-                                }
-                            }
                         }
                     }
                     
@@ -128,31 +126,50 @@ struct EditTransactionForm: View {
                         DatePicker("Select Time", selection: $selectedDateTime, displayedComponents: .hourAndMinute)
                             .datePickerStyle(CompactDatePickerStyle())
                     }
+                    
+                    Section(header: Text("Location")) {
+                        Map(coordinateRegion: $mapRegion, interactionModes: .all)
+                            .frame(height: 200)
+                            .onAppear {
+                                if transactionLocation == nil {
+                                    transactionLocation = mapRegion.center
+                                }
+                            }
+                            .onChange(of: mapRegion.center.latitude) { _ in
+                                transactionLocation = mapRegion.center
+                            }
+                            .onChange(of: mapRegion.center.longitude) { _ in
+                                transactionLocation = mapRegion.center
+                            }
+                    }
                 }
-                .background(Color.clear)
                 
                 HStack {
                     Button(action: {
-                        if let transaction = transaction {
-                            transactionViewModel.updateTransaction(
-                                transaction: transaction,
-                                transactionName: transactionName,
-                                amount: amount,
-                                fromAccountID: selectedAccountID,
-                                toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
-                                transactionType: transactionType,
-                                dateTime: selectedDateTime
-                            )
-                        } else {
-                            transactionViewModel.addTransaction(
-                                accountID: selectedAccountID,
-                                transactionName: transactionName,
-                                amount: amount,
-                                fromAccountID: selectedAccountID,
-                                toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
-                                transactionType: transactionType,
-                                dateTime: selectedDateTime
-                            )
+                        let dateTime = Timestamp(date: selectedDateTime)
+                        
+                        if let location = transactionLocation {
+                            let newLocation = Location(latitude: location.latitude, longitude: location.longitude)
+                            
+                            if let transaction = transaction {
+                                transactionViewModel.updateTransaction(
+                                    transaction: transaction,
+                                    transactionName: transactionName,
+                                    amount: amount,
+                                    transactionType: transactionType,
+                                    dateTime: dateTime,
+                                    location: newLocation
+                                )
+                            } else {
+                                transactionViewModel.addTransaction(
+                                    accountID: selectedAccountID,
+                                    transactionName: transactionName,
+                                    amount: amount,
+                                    transactionType: transactionType,
+                                    dateTime: dateTime,
+                                    location: newLocation
+                                )
+                            }
                         }
                         dismiss()
                     }) {
@@ -168,7 +185,7 @@ struct EditTransactionForm: View {
                         Button(action: {
                             transactionViewModel.deleteTransaction(
                                 accountID: selectedAccountID,
-                                transactionID: transaction!.id!
+                                transactionID: transaction!.id ?? ""
                             )
                             dismiss()
                         }) {
@@ -201,12 +218,11 @@ struct EditTransactionForm: View {
                     transactionType = transaction.transactionType
                     transactionName = transaction.transactionName
                     amount = transaction.amount
-                    selectedAccountID = transaction.fromAccountID
-                    selectedTargetAccountID = transaction.toAccountID ?? ""
-                    selectedDateTime = transaction.dateTime
+                    selectedAccountID = transaction.accountId
+                    selectedDateTime = transaction.dateTime.dateValue()
+                    transactionLocation = transaction.location?.toCoordinate()
+                    mapRegion.center = transactionLocation ?? CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
                     selectedEmoji = selectEmoji(for: transaction.transactionType)
-                } else {
-                    selectedEmoji = selectEmoji(for: transactionType)
                 }
             }
         }
@@ -214,14 +230,16 @@ struct EditTransactionForm: View {
     
     func selectEmoji(for transactionType: String) -> String {
         switch transactionType {
-        case "Expense":
-            return "💰"
-        case "Income":
-            return "🍾"
-        case "Transaction":
-            return "🔄"
-        default:
-            return "❓"
+        case "Expense": return "💰"
+        case "Income": return "🍾"
+        case "Transaction": return "🔄"
+        default: return "❓"
         }
+    }
+}
+
+extension Location {
+    func toCoordinate() -> CLLocationCoordinate2D {
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }
