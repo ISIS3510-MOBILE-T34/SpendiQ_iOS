@@ -15,9 +15,8 @@ struct SignUpView: View {
     @State private var lastName = ""
     @State private var agreeToTerms = false
     @State private var showTermsAndConditions = false
-    @State private var phoneNumber = ""
     @State private var birthDate = Date()
-    @State private var showVerificationView = false
+    @State private var showSMSVerificationView = false  // Correct property
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -144,8 +143,9 @@ struct SignUpView: View {
                 Button(action: {
                     if agreeToTerms {
                         viewModel.fullName = firstName + " " + lastName
+                        viewModel.birthDate = birthDateFormatter.string(from: birthDate)
                         viewModel.signUp(appState: appState)
-                        self.showVerificationView = true
+                        self.showSMSVerificationView = true  // Corrected line
                     } else {
                         viewModel.errorMessage = "Please agree to the Terms & Conditions"
                     }
@@ -174,9 +174,10 @@ struct SignUpView: View {
         .sheet(isPresented: $showTermsAndConditions) {
             TermsAndConditionsView()
         }
-        .sheet(isPresented: $showVerificationView) {
-            EmailVerificationView()
+        .sheet(isPresented: $showSMSVerificationView) {
+            SMSVerificationView()
                 .environmentObject(appState)
+                .environmentObject(viewModel)
         }
     }
 }

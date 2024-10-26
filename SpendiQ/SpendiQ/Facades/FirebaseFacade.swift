@@ -12,12 +12,12 @@ import FirebaseFirestore
 
 protocol FirebaseFacadeProtocol {
     func createUserDocument(userId: String, data: [String: Any]) -> AnyPublisher<Void, Error>
-    func updateUserVerifiedEmail(userId: String, verified: Bool) -> AnyPublisher<Void, Error>
+    func updateUserVerifiedPhoneNumber(userId: String, verified: Bool) -> AnyPublisher<Void, Error>
 }
 
 class FirebaseFacade: FirebaseFacadeProtocol {
     private let db = Firestore.firestore()
-    
+
     func createUserDocument(userId: String, data: [String: Any]) -> AnyPublisher<Void, Error> {
         Deferred {
             Future { [weak self] promise in
@@ -31,12 +31,12 @@ class FirebaseFacade: FirebaseFacadeProtocol {
             }
         }.eraseToAnyPublisher()
     }
-    
-    func updateUserVerifiedEmail(userId: String, verified: Bool) -> AnyPublisher<Void, Error> {
+
+    func updateUserVerifiedPhoneNumber(userId: String, verified: Bool) -> AnyPublisher<Void, Error> {
         Deferred {
             Future { [weak self] promise in
                 self?.db.collection("users").document(userId).updateData([
-                    "verifiedEmail": verified
+                    "verifiedPhoneNumber": verified
                 ]) { error in
                     if let error = error {
                         promise(.failure(error))

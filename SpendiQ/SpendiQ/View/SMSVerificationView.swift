@@ -1,25 +1,26 @@
 //
-//  EmailVerificationView.swift
+//  SMSVerificationView.swift
 //  SpendiQ
 //
-//  Created by Alonso Hernandez on 25/10/24.
+//  Created by Alonso Hernandez on 26/10/24.
 //
 
 import SwiftUI
 
-struct EmailVerificationView: View {
+struct SMSVerificationView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = AuthenticationViewModel()
-    
+    @EnvironmentObject var viewModel: AuthenticationViewModel
+
     var body: some View {
         VStack(spacing: 20) {
-            Text("Enter Verification Code")
+            Text("Enter SMS Verification Code")
                 .font(.title)
-            TextField("Verification Code", text: $viewModel.verificationCode)
+            TextField("SMS Code", text: $viewModel.smsCode)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
+                .keyboardType(.numberPad)
             Button(action: {
-                viewModel.verifyEmailCode(appState: appState)
+                viewModel.verifySMSCode(appState: appState)
             }) {
                 Text("Verify")
                     .frame(maxWidth: .infinity)

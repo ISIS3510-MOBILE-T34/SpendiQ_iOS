@@ -7,7 +7,6 @@
 import Foundation
 import Combine
 import SwiftUI
-import FirebaseAuth
 
 class AuthenticationViewModel: ObservableObject {
     @Published var email: String = ""
@@ -16,11 +15,13 @@ class AuthenticationViewModel: ObservableObject {
     @Published var phoneNumber: String = ""
     @Published var birthDate: String = ""
     @Published var errorMessage: String?
-    @Published var verificationCode: String = ""
-    
+    @Published var smsCode: String = ""
+    @Published var isVerificationSent: Bool = false
+
     private var cancellables = Set<AnyCancellable>()
     private let authService: AuthenticationServiceProtocol
-    
+    private let smsService = SMSVerificationService()
+
     init(authService: AuthenticationServiceProtocol = AuthenticationService()) {
         self.authService = authService
     }
@@ -55,40 +56,42 @@ class AuthenticationViewModel: ObservableObject {
         .sink { [weak self] completion in
             switch completion {
             case .finished:
-                break
+                self?.sendVerificationCode()
             case .failure(let error):
                 self?.errorMessage = error.localizedDescription
             }
-        } receiveValue: { success in
-            if success {
-                appState.isAuthenticated = true
-            }
-        }
+        } receiveValue: { _ in }
         .store(in: &cancellables)
     }
-    
-    func verifyEmailCode(appState: AppState) {
-        guard let email = Auth.auth().currentUser?.email else {
-            self.errorMessage = "No email found for current user"
-            return
-        }
-        authService.verifyEmailCode(email: email, code: verificationCode)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] completion in
-                switch completion {
-                case .finished:
-                    break
+
+    func sendVerificationCode() {
+        smsService.sendVerificationCode(to: phoneNumber) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.isVerificationSent = true
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }
-            } receiveValue: { [weak self] isSuccess in
-                if isSuccess {
-                    appState.isAuthenticated = true
-                } else {
-                    self?.errorMessage = "Invalid verification code"
+            }
+        }
+    }
+
+    func verifySMSCode(appState: AppState) {
+        smsService.verifyCode(smsCode, for: phoneNumber) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let isValid):
+                    if isValid {
+                        appState.isAuthenticated = true
+                    } else {
+                        self?.errorMessage = "Invalid verification code."
+                    }
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
                 }
             }
-            .store(in: &cancellables)
+        }
     }
     
     func resetPassword() {

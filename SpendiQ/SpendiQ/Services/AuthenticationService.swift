@@ -1,10 +1,3 @@
-//
-//  AuthenticationService.swift
-//  SpendiQ
-//
-//  Created by Daniel Clavijo on 30/09/24.
-//
-
 import Foundation
 import Combine
 import FirebaseAuth
@@ -18,7 +11,6 @@ protocol AuthenticationServiceProtocol {
     func confirmPasswordReset(code: String, newPassword: String) -> AnyPublisher<Void, Error>
     func logout() -> AnyPublisher<Bool, Error>
     func getCurrentUser() -> User?
-    func verifyEmailCode(email: String, code: String) -> AnyPublisher<Bool, Error>
 }
 
 class AuthenticationService: AuthenticationServiceProtocol {
@@ -56,33 +48,30 @@ class AuthenticationService: AuthenticationServiceProtocol {
     func signUp(email: String, password: String, fullName: String, phoneNumber: String, birthDate: String) -> AnyPublisher<Bool, Error> {
         Deferred {
             Future { [weak self] promise in
+                guard let self = self else { return }
+                
                 Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-                    guard let self = self else { return }
                     if let error = error {
                         promise(.failure(error))
                         return
                     }
-                    
+
                     guard let userId = authResult?.user.uid else {
                         promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get user ID"])))
                         return
                     }
-                    
+
                     let userData: [String: Any] = [
                         "fullName": fullName,
                         "email": email,
                         "phoneNumber": phoneNumber,
                         "birthDate": birthDate,
                         "registrationDate": self.dateFormatter.string(from: Date()),
-                        "verifiedEmail": false
+                        "verifiedPhoneNumber": false
                     ]
-                    
+
                     let firebaseFacade = FirebaseFacade()
                     firebaseFacade.createUserDocument(userId: userId, data: userData)
-                        .flatMap { _ -> AnyPublisher<Void, Error> in
-                            let emailVerificationService = EmailVerificationService()
-                            return emailVerificationService.sendVerificationCode(to: email)
-                        }
                         .sink(receiveCompletion: { completion in
                             switch completion {
                             case .finished:
@@ -95,26 +84,6 @@ class AuthenticationService: AuthenticationServiceProtocol {
                 }
             }
         }.eraseToAnyPublisher()
-    }
-    
-    func verifyEmailCode(email: String, code: String) -> AnyPublisher<Bool, Error> {
-        let emailVerificationService = EmailVerificationService()
-        return emailVerificationService.verifyCode(code, for: email)
-            .flatMap { isValid -> AnyPublisher<Bool, Error> in
-                if isValid {
-                    guard let userId = Auth.auth().currentUser?.uid else {
-                        return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])).eraseToAnyPublisher()
-                    }
-                    let firebaseFacade = FirebaseFacade()
-                    return firebaseFacade.updateUserVerifiedEmail(userId: userId, verified: true)
-                        .map { _ in true }
-                        .eraseToAnyPublisher()
-                } else {
-                    return Just(false)
-                        .setFailureType(to: Error.self)
-                        .eraseToAnyPublisher()
-                }
-            }.eraseToAnyPublisher()
     }
     
     func resetPassword(email: String) -> AnyPublisher<Void, Error> {
@@ -176,18 +145,28 @@ class AuthenticationService: AuthenticationServiceProtocol {
         guard let firebaseUser = Auth.auth().currentUser else {
             return nil
         }
-        
-        // Primero creamos un usuario básico con los datos de Auth
-        let user = User(from: firebaseUser)
-        
-        // También podríamos obtener los datos adicionales de Firestore si los necesitamos
-        db.collection("users").document(firebaseUser.uid).getDocument { (document, error) in
-            if let document = document, document.exists {
-                // Aquí podrías actualizar los datos del usuario con la información de Firestore
-                // Por ejemplo, a través de un delegate o callback
+
+        var user = User(from: firebaseUser)
+
+        // Fetch additional user data from Firestore
+        db.collection("users").document(firebaseUser.uid).getDocument { [weak self] (document, error) in
+            if let document = document, document.exists, var userData = document.data() {
+                // Update the user object with data from Firestore
+                userData["id"] = firebaseUser.uid
+                userData["email"] = user.email
+                userData["fullName"] = user.fullName
+                userData["phoneNumber"] = user.phoneNumber
+
+                if let verifiedPhoneNumber = userData["verifiedPhoneNumber"] as? Bool {
+                    user.verifiedPhoneNumber = verifiedPhoneNumber
+                }
+
+                // You can notify observers here if needed
+            } else {
+                print("Error fetching user data: \(error?.localizedDescription ?? "Unknown error")")
             }
         }
-        
+
         return user
     }
 }

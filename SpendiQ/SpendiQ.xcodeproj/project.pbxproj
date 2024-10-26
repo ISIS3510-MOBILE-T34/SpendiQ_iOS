@@ -12,6 +12,7 @@
 		27FF2E4C2CAE57E600A7ACB8 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4B2CAE57E600A7ACB8 /* FirebaseCore */; };
 		27FF2E4E2CAE57E600A7ACB8 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4D2CAE57E600A7ACB8 /* FirebaseFirestore */; };
 		27FF2E502CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4F2CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community */; };
+		8969EDD82CCD675C00C1A40D /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 8969EDD72CCD675C00C1A40D /* Alamofire */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,6 +31,19 @@
 			remoteInfo = SpendiQ;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8969EDDC2CCD676200C1A40D /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		27D3DB852CA5E4BB005FCD91 /* SpendiQ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpendiQ.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -97,6 +111,7 @@
 				273719902CAE51B500DD05DB /* FirebaseAnalytics in Frameworks */,
 				27FF2E4E2CAE57E600A7ACB8 /* FirebaseFirestore in Frameworks */,
 				27FF2E4C2CAE57E600A7ACB8 /* FirebaseCore in Frameworks */,
+				8969EDD82CCD675C00C1A40D /* Alamofire in Frameworks */,
 				27FF2E502CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community in Frameworks */,
 				273719F32CAE55D400DD05DB /* FirebaseAuth in Frameworks */,
 			);
@@ -125,6 +140,7 @@
 				27D3DB872CA5E4BB005FCD91 /* SpendiQ */,
 				27D3DB982CA5E4BD005FCD91 /* SpendiQTests */,
 				27D3DBA22CA5E4BD005FCD91 /* SpendiQUITests */,
+				8969EDD62CCD675C00C1A40D /* Frameworks */,
 				27D3DB862CA5E4BB005FCD91 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -139,6 +155,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		8969EDD62CCD675C00C1A40D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -149,6 +172,7 @@
 				27D3DB812CA5E4BB005FCD91 /* Sources */,
 				27D3DB822CA5E4BB005FCD91 /* Frameworks */,
 				27D3DB832CA5E4BB005FCD91 /* Resources */,
+				8969EDDC2CCD676200C1A40D /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -164,6 +188,7 @@
 				27FF2E4B2CAE57E600A7ACB8 /* FirebaseCore */,
 				27FF2E4D2CAE57E600A7ACB8 /* FirebaseFirestore */,
 				27FF2E4F2CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community */,
+				8969EDD72CCD675C00C1A40D /* Alamofire */,
 			);
 			productName = SpendiQ;
 			productReference = 27D3DB852CA5E4BB005FCD91 /* SpendiQ.app */;
@@ -250,6 +275,7 @@
 			packageReferences = (
 				27D3DBB62CA5E56F005FCD91 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				8994F79A2CC3332900B33F59 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				8969EDD52CCD672300C1A40D /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 27D3DB862CA5E4BB005FCD91 /* Products */;
@@ -462,8 +488,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = "";
 				INFOPLIST_KEY_UIStatusBarStyle = "";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -495,8 +520,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = "";
 				INFOPLIST_KEY_UIStatusBarStyle = "";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -628,6 +652,14 @@
 				minimumVersion = 11.2.0;
 			};
 		};
+		8969EDD52CCD672300C1A40D /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.10.1;
+			};
+		};
 		8994F79A2CC3332900B33F59 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
@@ -663,6 +695,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 27D3DBB62CA5E56F005FCD91 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseFirestoreCombine-Community";
+		};
+		8969EDD72CCD675C00C1A40D /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8969EDD52CCD672300C1A40D /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
