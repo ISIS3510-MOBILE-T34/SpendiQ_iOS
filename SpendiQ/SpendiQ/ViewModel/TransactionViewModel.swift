@@ -7,7 +7,7 @@ class TransactionViewModel: ObservableObject {
     @Published var transactionsByDay: [String: [Transaction]] = [:]
     @Published var totalByDay: [String: Int64] = [:]
     @Published var accounts: [String: String] = [:]
-    @Published var isLoading = false // Indica si las transacciones están cargando
+    @Published var isLoading = false
     
     private let db = Firestore.firestore()
     private let bankAccountViewModel = BankAccountViewModel()
@@ -28,10 +28,10 @@ class TransactionViewModel: ObservableObject {
                 var transactionsTemp: [Transaction] = []
                 var transactionsByDayTemp: [String: [Transaction]] = [:]
                 var totalByDayTemp: [String: Int64] = [:]
-
+                
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd"
-
+                
                 for document in querySnapshot?.documents ?? [] {
                     let accountID = document.documentID
                     self.db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
@@ -41,7 +41,7 @@ class TransactionViewModel: ObservableObject {
                             for transactionDoc in transactionSnapshot?.documents ?? [] {
                                 var transaction = try? transactionDoc.data(as: Transaction.self)
                                 transaction?.id = transactionDoc.documentID
-
+                                
                                 if let transaction = transaction {
                                     transactionsTemp.append(transaction)
                                     let day = dateFormatter.string(from: transaction.dateTime.dateValue())
@@ -50,12 +50,12 @@ class TransactionViewModel: ObservableObject {
                                     } else {
                                         transactionsByDayTemp[day] = [transaction]
                                     }
-
+                                    
                                     totalByDayTemp[day] = (totalByDayTemp[day] ?? 0) + transaction.amount
                                 }
                             }
                         }
-
+                        
                         DispatchQueue.main.async {
                             self.transactions = transactionsTemp
                             self.transactionsByDay = transactionsByDayTemp
@@ -90,7 +90,7 @@ class TransactionViewModel: ObservableObject {
             amountAnomaly: false,
             locationAnomaly: false
         )
-
+        
         do {
             let _ = try db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").addDocument(from: newTransaction) { error in
                 if let error = error {
@@ -99,6 +99,9 @@ class TransactionViewModel: ObservableObject {
                     print("Transacción guardada exitosamente")
                     self.updateAccountBalanceOnAdd(accountID: accountID, amount: amount, transactionType: transactionType)
                     self.getTransactionsForAllAccounts()
+                    
+                    // Llamada al endpoint después de agregar la transacción
+                    self.analyzeTransaction(userId: userId, transactionId: newTransaction.id ?? "")
                 }
             }
         } catch {
@@ -123,7 +126,7 @@ class TransactionViewModel: ObservableObject {
             amountAnomaly: transaction.amountAnomaly,
             locationAnomaly: transaction.locationAnomaly
         )
-
+        
         do {
             try db.collection("users").document(userId).collection("accounts").document(transaction.accountId).collection("transactions").document(transaction.id ?? "").setData(from: updatedTransaction) { error in
                 if let error = error {
@@ -132,6 +135,9 @@ class TransactionViewModel: ObservableObject {
                     print("Transacción actualizada exitosamente")
                     self.adjustAccountBalanceAfterEdit(oldTransaction: transaction, newTransaction: updatedTransaction)
                     self.getTransactionsForAllAccounts()
+                    
+                    // Llamada al endpoint después de actualizar la transacción
+                    self.analyzeTransaction(userId: userId, transactionId: transaction.id ?? "")
                 }
             }
         } catch {
@@ -144,7 +150,7 @@ class TransactionViewModel: ObservableObject {
             print("Usuario no autenticado")
             return
         }
-
+        
         db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").document(transactionID).getDocument { (document, error) in
             if let document = document, document.exists {
                 let transaction = try? document.data(as: Transaction.self)
@@ -170,11 +176,11 @@ class TransactionViewModel: ObservableObject {
             print("Usuario no autenticado")
             return
         }
-
+        
         if accounts[accountID] != nil {
             return
         }
-
+        
         db.collection("users").document(userId).collection("accounts").document(accountID).getDocument { (document, error) in
             if let document = document, document.exists {
                 let accountName = document.data()?["name"] as? String ?? "Cuenta desconocida"
@@ -233,4 +239,21 @@ class TransactionViewModel: ObservableObject {
         
         bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: Double(amountChange))
     }
+    
+    private func analyzeTransaction(userId: String, transactionId: String) {
+        let urlString = "http://148.113.204.223:8000/api/analyze-transaction-complete/\(userId)/\(transactionId)"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Error al llamar al endpoint de análisis: \(error.localizedDescription)")
+            } else {
+                print("Llamado al endpoint de análisis exitoso")
+            }
+        }.resume()
+    }
 }
+
