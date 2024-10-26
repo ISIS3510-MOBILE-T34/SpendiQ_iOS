@@ -21,7 +21,8 @@ class UserViewModel: ObservableObject {
                 fullName: "Alonso Hernandez",
                 email: "alonso@example.com",
                 phoneNumber: "+1234567890",
-                birthDate: "01/01/1990"
+                birthDate: "01/01/1990",
+                verifiedEmail: false
             )
             self.isLoading = false
         } else {
@@ -61,7 +62,8 @@ class UserViewModel: ObservableObject {
                     email: data["email"] as? String ?? currentUser.email ?? "",
                     phoneNumber: data["phoneNumber"] as? String ?? "",
                     birthDate: data["birthDate"] as? String ?? "",
-                    registrationDate: registrationDate
+                    registrationDate: registrationDate,
+                    verifiedEmail: data["verifiedEmail"] as? Bool ?? false
                 )
                 self.isLoading = false
             }

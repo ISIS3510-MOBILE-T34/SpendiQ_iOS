@@ -7,6 +7,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import FirebaseAuth
 
 class AuthenticationViewModel: ObservableObject {
     @Published var email: String = ""
@@ -15,6 +16,7 @@ class AuthenticationViewModel: ObservableObject {
     @Published var phoneNumber: String = ""
     @Published var birthDate: String = ""
     @Published var errorMessage: String?
+    @Published var verificationCode: String = ""
     
     private var cancellables = Set<AnyCancellable>()
     private let authService: AuthenticationServiceProtocol
@@ -63,6 +65,30 @@ class AuthenticationViewModel: ObservableObject {
             }
         }
         .store(in: &cancellables)
+    }
+    
+    func verifyEmailCode(appState: AppState) {
+        guard let email = Auth.auth().currentUser?.email else {
+            self.errorMessage = "No email found for current user"
+            return
+        }
+        authService.verifyEmailCode(email: email, code: verificationCode)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completion in
+                switch completion {
+                case .finished:
+                    break
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                }
+            } receiveValue: { [weak self] isSuccess in
+                if isSuccess {
+                    appState.isAuthenticated = true
+                } else {
+                    self?.errorMessage = "Invalid verification code"
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func resetPassword() {

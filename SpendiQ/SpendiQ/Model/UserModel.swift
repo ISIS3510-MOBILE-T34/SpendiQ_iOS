@@ -1,11 +1,3 @@
-//
-//  UserModel.swift
-//  SpendiQ
-//
-//  Created by Fai on 25/09/24.
-//
-
-//  UserModel.swift
 import Foundation
 import FirebaseAuth
 
@@ -16,16 +8,18 @@ struct User {
     var phoneNumber: String
     var birthDate: String
     var registrationDate: Date
-    
-    init(id: String, fullName: String, email: String, phoneNumber: String, birthDate: String, registrationDate: Date = Date()) {
+    var verifiedEmail: Bool
+
+    init(id: String, fullName: String, email: String, phoneNumber: String, birthDate: String, registrationDate: Date = Date(), verifiedEmail: Bool) {
         self.id = id
         self.fullName = fullName
         self.email = email
         self.phoneNumber = phoneNumber
         self.birthDate = birthDate
         self.registrationDate = registrationDate
+        self.verifiedEmail = verifiedEmail
     }
-    
+
     init?(from firebaseUser: FirebaseAuth.User) {
         self.id = firebaseUser.uid
         self.email = firebaseUser.email ?? ""
@@ -33,5 +27,6 @@ struct User {
         self.phoneNumber = firebaseUser.phoneNumber ?? ""
         self.birthDate = ""
         self.registrationDate = firebaseUser.metadata.creationDate ?? Date()
+        self.verifiedEmail = firebaseUser.isEmailVerified
     }
 }

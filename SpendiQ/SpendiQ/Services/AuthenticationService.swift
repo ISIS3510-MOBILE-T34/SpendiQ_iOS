@@ -18,15 +18,18 @@ protocol AuthenticationServiceProtocol {
     func confirmPasswordReset(code: String, newPassword: String) -> AnyPublisher<Void, Error>
     func logout() -> AnyPublisher<Bool, Error>
     func getCurrentUser() -> User?
+    func verifyEmailCode(email: String, code: String) -> AnyPublisher<Bool, Error>
 }
 
 class AuthenticationService: AuthenticationServiceProtocol {
     private let db = Firestore.firestore()
+    private var cancellables = Set<AnyCancellable>()
+    
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es_ES")
         formatter.dateFormat = "d 'de' MMMM 'de' yyyy, h:mm:ss'p.m.' z"
-        formatter.timeZone = TimeZone(identifier: "UTC-5")  // Para coincidir con el formato mostrado
+        formatter.timeZone = TimeZone(identifier: "UTC-5")
         return formatter
     }()
     
@@ -35,6 +38,7 @@ class AuthenticationService: AuthenticationServiceProtocol {
         formatter.dateFormat = "dd/M/yyyy"
         return formatter
     }()
+    
     func login(email: String, password: String) -> AnyPublisher<Bool, Error> {
         Deferred {
             Future { promise in
@@ -53,6 +57,7 @@ class AuthenticationService: AuthenticationServiceProtocol {
         Deferred {
             Future { [weak self] promise in
                 Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+                    guard let self = self else { return }
                     if let error = error {
                         promise(.failure(error))
                         return
@@ -63,25 +68,53 @@ class AuthenticationService: AuthenticationServiceProtocol {
                         return
                     }
                     
-                    let userDocument = self?.db.collection("users").document(userId)
                     let userData: [String: Any] = [
                         "fullName": fullName,
                         "email": email,
                         "phoneNumber": phoneNumber,
                         "birthDate": birthDate,
-                        "registrationDate": self?.dateFormatter.string(from: Date()) ?? ""
+                        "registrationDate": self.dateFormatter.string(from: Date()),
+                        "verifiedEmail": false
                     ]
                     
-                    userDocument?.setData(userData) { error in
-                        if let error = error {
-                            promise(.failure(error))
-                        } else {
-                            promise(.success(true))
+                    let firebaseFacade = FirebaseFacade()
+                    firebaseFacade.createUserDocument(userId: userId, data: userData)
+                        .flatMap { _ -> AnyPublisher<Void, Error> in
+                            let emailVerificationService = EmailVerificationService()
+                            return emailVerificationService.sendVerificationCode(to: email)
                         }
-                    }
+                        .sink(receiveCompletion: { completion in
+                            switch completion {
+                            case .finished:
+                                promise(.success(true))
+                            case .failure(let error):
+                                promise(.failure(error))
+                            }
+                        }, receiveValue: { _ in })
+                        .store(in: &self.cancellables)
                 }
             }
         }.eraseToAnyPublisher()
+    }
+    
+    func verifyEmailCode(email: String, code: String) -> AnyPublisher<Bool, Error> {
+        let emailVerificationService = EmailVerificationService()
+        return emailVerificationService.verifyCode(code, for: email)
+            .flatMap { isValid -> AnyPublisher<Bool, Error> in
+                if isValid {
+                    guard let userId = Auth.auth().currentUser?.uid else {
+                        return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])).eraseToAnyPublisher()
+                    }
+                    let firebaseFacade = FirebaseFacade()
+                    return firebaseFacade.updateUserVerifiedEmail(userId: userId, verified: true)
+                        .map { _ in true }
+                        .eraseToAnyPublisher()
+                } else {
+                    return Just(false)
+                        .setFailureType(to: Error.self)
+                        .eraseToAnyPublisher()
+                }
+            }.eraseToAnyPublisher()
     }
     
     func resetPassword(email: String) -> AnyPublisher<Void, Error> {
