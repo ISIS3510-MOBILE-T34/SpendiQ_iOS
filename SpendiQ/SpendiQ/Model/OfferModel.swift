@@ -16,4 +16,5 @@ struct Offer: Identifiable {
     var latitude: Double // Latitude for map
     var longitude: Double // Longitude for map
     var distance: Int // Distance from the user, as an integer
+    var shopReference: String //path to the related shop, which is in a path like this in Firestore (/shops/[id])
 }
