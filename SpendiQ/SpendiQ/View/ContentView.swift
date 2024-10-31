@@ -13,10 +13,6 @@ struct ContentView: View {
                 switch selectedTab {
                 case "Home":
                     HomePage()
-                        .onAppear {
-                            NotificationManager.shared.requestNotificationPermission()
-                            NotificationManager.shared.scheduleTestMessage()
-                        }
                 case "Promos":
                     PromosPage()
                 case "Accounts":
