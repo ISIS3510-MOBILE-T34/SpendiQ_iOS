@@ -1,15 +1,12 @@
+// MovementForm.swift
+
 import SwiftUI
-import FirebaseCore
-import CoreLocation
-import MapKit
 
 struct MovementForm: View {
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
-    private let locationManager = LocationManager() // Instancia de LocationManager
 
     var body: some View {
         EditTransactionForm(
-            locationManager: locationManager,
             bankAccountViewModel: bankAccountViewModel,
             transactionViewModel: TransactionViewModel(),
             transaction: nil
@@ -17,41 +14,24 @@ struct MovementForm: View {
     }
 }
 
-import SwiftUI
-import MapKit
-import FirebaseFirestore
+// EditTransactionForm.swift
+
 
 struct EditTransactionForm: View {
-    @ObservedObject var locationManager: LocationManager
     @Environment(\.dismiss) var dismiss
-
     @State private var transactionType: String = "Expense"
     @State private var transactionName: String = ""
-    @State private var amount: Int64 = 0
+    @State private var amount: Float = 0.0
     @State private var selectedAccountID: String = ""
     @State private var selectedTargetAccountID: String = ""
     @State private var selectedEmoji: String = ""
     @State private var selectedDateTime: Date = Date()
-    @State private var transactionLocation: CLLocationCoordinate2D?
-
-    @State private var mapRegion = EquatableCoordinateRegion(region: MKCoordinateRegion())
-
+    @FocusState private var isEmojiFieldFocused: Bool
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
     @ObservedObject var transactionViewModel: TransactionViewModel
     var transaction: Transaction?
     
-    init(locationManager: LocationManager, bankAccountViewModel: BankAccountViewModel, transactionViewModel: TransactionViewModel, transaction: Transaction?) {
-        self.locationManager = locationManager
-        self.bankAccountViewModel = bankAccountViewModel
-        self.transactionViewModel = transactionViewModel
-        self.transaction = transaction
-        
-        // Inicializa mapRegion con la ubicación actual o una región predeterminada
-        _mapRegion = State(initialValue: EquatableCoordinateRegion(region: MKCoordinateRegion(
-            center: transaction?.location?.toCoordinate() ?? locationManager.location?.coordinate ?? CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0),
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        )))
-    }
+    let transactionTypes = ["Expense", "Income", "Transaction"]
     
     var body: some View {
         NavigationView {
@@ -62,7 +42,7 @@ struct EditTransactionForm: View {
                     .padding(.top, 20)
                 
                 Picker("Select Type", selection: $transactionType) {
-                    ForEach(["Expense", "Income", "Transaction"], id: \.self) { type in
+                    ForEach(transactionTypes, id: \.self) { type in
                         Text(type).tag(type)
                     }
                 }
@@ -76,23 +56,31 @@ struct EditTransactionForm: View {
                     ZStack(alignment: .center) {
                         Circle()
                             .frame(width: 100, height: 100)
-                            .foregroundColor(.yellow)
+                            .foregroundColor(.primarySpendiq)
                         Text(selectedEmoji.isEmpty ? "🙂" : selectedEmoji)
                             .font(.system(size: 58))
                     }
+                    
                     Button("Change icon") {
-                        // Aquí puedes abrir un selector de emojis o algo similar si lo necesitas
+                        isEmojiFieldFocused = true
                     }
+                    .foregroundColor(.blue)
                 }
                 
                 Form {
-                    Section(header: Text("Transaction Name")) {
+                    Section(header: Text("Transaction name")) {
                         TextField("Transaction name", text: $transactionName)
+                            .frame(height: 32)
                     }
                     
                     Section(header: Text("Amount")) {
                         TextField("Amount", value: $amount, format: .number)
                             .keyboardType(.decimalPad)
+                            .onChange(of: amount) { oldValue, newValue in
+                                if newValue < 0 {
+                                    amount = 0.0
+                                }
+                            }
                     }
                     
                     Section(header: Text("Select Account")) {
@@ -103,11 +91,11 @@ struct EditTransactionForm: View {
                         }
                         .pickerStyle(MenuPickerStyle())
                         .onAppear {
-                            if bankAccountViewModel.accounts.isEmpty {
-                                bankAccountViewModel.getBankAccounts()
-                            }
-                            if selectedAccountID.isEmpty, let firstAccount = bankAccountViewModel.accounts.first {
-                                selectedAccountID = firstAccount.id ?? ""
+                            bankAccountViewModel.getBankAccounts()
+                        }
+                        .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
+                            if !newAccounts.isEmpty, selectedAccountID.isEmpty {
+                                selectedAccountID = newAccounts.first?.id ?? ""
                             }
                         }
                     }
@@ -120,6 +108,11 @@ struct EditTransactionForm: View {
                                 }
                             }
                             .pickerStyle(MenuPickerStyle())
+                            .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
+                                if !newAccounts.isEmpty, selectedTargetAccountID.isEmpty {
+                                    selectedTargetAccountID = newAccounts.first?.id ?? ""
+                                }
+                            }
                         }
                     }
                     
@@ -132,47 +125,31 @@ struct EditTransactionForm: View {
                         DatePicker("Select Time", selection: $selectedDateTime, displayedComponents: .hourAndMinute)
                             .datePickerStyle(CompactDatePickerStyle())
                     }
-                    
-                    Section(header: Text("Location")) {
-                        Map(coordinateRegion: .constant(mapRegion.region), interactionModes: .all)
-                            .frame(height: 200)
-                            .onAppear {
-                                if transactionLocation == nil {
-                                    transactionLocation = mapRegion.region.center
-                                }
-                            }
-                            .onChange(of: mapRegion) { newRegion in
-                                transactionLocation = newRegion.region.center
-                            }
-                    }
                 }
+                .background(Color.clear)
                 
                 HStack {
                     Button(action: {
-                        let dateTime = Timestamp(date: selectedDateTime)
-                        
-                        if let location = transactionLocation {
-                            let newLocation = Location(latitude: location.latitude, longitude: location.longitude)
-                            
-                            if let transaction = transaction {
-                                transactionViewModel.updateTransaction(
-                                    transaction: transaction,
-                                    transactionName: transactionName,
-                                    amount: amount,
-                                    transactionType: transactionType,
-                                    dateTime: dateTime,
-                                    location: newLocation
-                                )
-                            } else {
-                                transactionViewModel.addTransaction(
-                                    accountID: selectedAccountID,
-                                    transactionName: transactionName,
-                                    amount: amount,
-                                    transactionType: transactionType,
-                                    dateTime: dateTime,
-                                    location: newLocation
-                                )
-                            }
+                        if let transaction = transaction {
+                            transactionViewModel.updateTransaction(
+                                transaction: transaction,
+                                transactionName: transactionName,
+                                amount: amount,
+                                fromAccountID: selectedAccountID,
+                                toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
+                                transactionType: transactionType,
+                                dateTime: selectedDateTime
+                            )
+                        } else {
+                            transactionViewModel.addTransaction(
+                                accountID: selectedAccountID,
+                                transactionName: transactionName,
+                                amount: amount,
+                                fromAccountID: selectedAccountID,
+                                toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
+                                transactionType: transactionType,
+                                dateTime: selectedDateTime
+                            )
                         }
                         dismiss()
                     }) {
@@ -188,7 +165,7 @@ struct EditTransactionForm: View {
                         Button(action: {
                             transactionViewModel.deleteTransaction(
                                 accountID: selectedAccountID,
-                                transactionID: transaction!.id ?? ""
+                                transactionID: transaction!.id!
                             )
                             dismiss()
                         }) {
@@ -221,11 +198,12 @@ struct EditTransactionForm: View {
                     transactionType = transaction.transactionType
                     transactionName = transaction.transactionName
                     amount = transaction.amount
-                    selectedAccountID = transaction.accountId
-                    selectedDateTime = transaction.dateTime.dateValue()
-                    transactionLocation = transaction.location?.toCoordinate()
-                    mapRegion.region.center = transactionLocation ?? CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
+                    selectedAccountID = transaction.fromAccountID
+                    selectedTargetAccountID = transaction.toAccountID ?? ""
+                    selectedDateTime = transaction.dateTime
                     selectedEmoji = selectEmoji(for: transaction.transactionType)
+                } else {
+                    selectedEmoji = selectEmoji(for: transactionType)
                 }
             }
         }
@@ -233,29 +211,14 @@ struct EditTransactionForm: View {
     
     func selectEmoji(for transactionType: String) -> String {
         switch transactionType {
-        case "Expense": return "💰"
-        case "Income": return "🍾"
-        case "Transaction": return "🔄"
-        default: return "❓"
+        case "Expense":
+            return "💰"
+        case "Income":
+            return "🍾"
+        case "Transaction":
+            return "🔄"
+        default:
+            return "❓"
         }
-    }
-}
-
-// Wrapper Equatable para MKCoordinateRegion
-struct EquatableCoordinateRegion: Equatable {
-    var region: MKCoordinateRegion
-    
-    static func == (lhs: EquatableCoordinateRegion, rhs: EquatableCoordinateRegion) -> Bool {
-        lhs.region.center.latitude == rhs.region.center.latitude &&
-        lhs.region.center.longitude == rhs.region.center.longitude &&
-        lhs.region.span.latitudeDelta == rhs.region.span.latitudeDelta &&
-        lhs.region.span.longitudeDelta == rhs.region.span.longitudeDelta
-    }
-}
-
-// Extensión para convertir Location a CLLocationCoordinate2D
-extension Location {
-    func toCoordinate() -> CLLocationCoordinate2D {
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }

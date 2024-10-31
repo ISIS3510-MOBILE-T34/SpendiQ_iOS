@@ -26,21 +26,5 @@
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:684669295151:ios:22100ccffcab32570d84da</string>
-    <key>NSAppTransportSecurity</key>
-    <dict>
-        <key>NSAllowsArbitraryLoads</key>
-        <true/>
-        <key>NSExceptionDomains</key>
-        <dict>
-            <key>148.113.204.223</key>
-            <dict>
-                <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-            </dict>
-        </dict>
-    </dict>
-    
 </dict>
 </plist>

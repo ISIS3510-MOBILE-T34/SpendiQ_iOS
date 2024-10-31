@@ -15,10 +15,13 @@ class AuthenticationViewModel: ObservableObject {
     @Published var phoneNumber: String = ""
     @Published var birthDate: String = ""
     @Published var errorMessage: String?
-    
+    @Published var smsCode: String = ""
+    @Published var isVerificationSent: Bool = false
+
     private var cancellables = Set<AnyCancellable>()
     private let authService: AuthenticationServiceProtocol
-    
+    private let smsService = SMSVerificationService()
+
     init(authService: AuthenticationServiceProtocol = AuthenticationService()) {
         self.authService = authService
     }
@@ -53,16 +56,42 @@ class AuthenticationViewModel: ObservableObject {
         .sink { [weak self] completion in
             switch completion {
             case .finished:
-                break
+                self?.sendVerificationCode()
             case .failure(let error):
                 self?.errorMessage = error.localizedDescription
             }
-        } receiveValue: { success in
-            if success {
-                appState.isAuthenticated = true
+        } receiveValue: { _ in }
+        .store(in: &cancellables)
+    }
+
+    func sendVerificationCode() {
+        smsService.sendVerificationCode(to: phoneNumber) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.isVerificationSent = true
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                }
             }
         }
-        .store(in: &cancellables)
+    }
+
+    func verifySMSCode(appState: AppState) {
+        smsService.verifyCode(smsCode, for: phoneNumber) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let isValid):
+                    if isValid {
+                        appState.isAuthenticated = true
+                    } else {
+                        self?.errorMessage = "Code is not valid, try again."
+                    }
+                case .failure:
+                    self?.errorMessage = "Code is not valid, try again."
+                }
+            }
+        }
     }
     
     func resetPassword() {
