@@ -18,8 +18,23 @@ struct MovementResume: View {
             .padding(.leading, 16)
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.transactionName)
-                    .fontWeight(.regular)
+                HStack(spacing: 4) {
+                    Text(transaction.transactionName)
+                        .fontWeight(.regular)
+                    
+                    // Mostrar íconos de anomalía si corresponden
+                    if transaction.amountAnomaly {
+                        Image(systemName: "creditcard.fill")
+                            .foregroundColor(.red)
+                            .font(.system(size: 14))
+                    }
+                    
+                    if transaction.locationAnomaly {
+                        Image(systemName: "mappin")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 14))
+                    }
+                }
                 
                 HStack {
                     Text(viewModel.accounts[transaction.accountId] ?? "Loading...")
@@ -33,7 +48,6 @@ struct MovementResume: View {
                         .fontWeight(.light)
                         .font(.system(size: 14))
                 }
-                
             }
             
             Spacer()
