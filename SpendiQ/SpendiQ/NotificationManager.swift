@@ -15,20 +15,4 @@ class NotificationManager {
             }
         }
     }
-
-    func scheduleTestMessage() {
-        let content = UNMutableNotificationContent()
-        content.title = "Nuevo Mensaje"
-        content.body = "Notificacion de prueba"
-        content.sound = .default
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: (60*5), repeats: true)
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Error al enviar la notificación: \(error.localizedDescription)")
-            }
-        }
-    }
 }

@@ -16,7 +16,8 @@ class UserViewModel: ObservableObject {
                 phoneNumber: "+1234567890",
                 birthDate: "01/01/1990",
                 registrationDate: Date(),
-                verifiedPhoneNumber: false  // Updated field
+                verifiedPhoneNumber: false,
+                profilePicture: ""
             )
             self.isLoading = false
         } else {
@@ -59,7 +60,8 @@ class UserViewModel: ObservableObject {
                     phoneNumber: data["phoneNumber"] as? String ?? "",
                     birthDate: data["birthDate"] as? String ?? "",
                     registrationDate: registrationDate,
-                    verifiedPhoneNumber: data["verifiedPhoneNumber"] as? Bool ?? false  // Updated field
+                    verifiedPhoneNumber: data["verifiedPhoneNumber"] as? Bool ?? false,
+                    profilePicture: data["profilePicture"] as? String ?? ""
                 )
                 self.isLoading = false
             }

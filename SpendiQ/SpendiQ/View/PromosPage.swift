@@ -8,15 +8,23 @@
 import SwiftUI
 
 struct PromosPage: View {
+    @ObservedObject var offerViewModel: OfferViewModel
+
+    init(locationManager: LocationManager) {
+        self.offerViewModel = OfferViewModel(locationManager: locationManager, mockData: false)
+    }
+
     var body: some View {
         VStack {
-            OfferBubbleView(viewModel: OfferViewModel(mockData: false))
+            OfferBubbleView(viewModel: offerViewModel)
                 .padding()
         }
     }
 }
 
-#Preview {
-    PromosPage()
+struct PromosPage_Previews: PreviewProvider {
+    static var previews: some View {
+        let locationManager = LocationManager()
+        PromosPage(locationManager: locationManager)
+    }
 }
-

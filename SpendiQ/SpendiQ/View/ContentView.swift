@@ -5,27 +5,33 @@ struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedTab: String = "Home"
     @State private var showOffersList: Bool = false
-    
+
+    // Initialize LocationManager and UserViewModel once and share them across the app
     @StateObject private var locationManager = LocationManager()
+    @StateObject private var userViewModel = UserViewModel() // Initialize without mockData for production
 
     var body: some View {
         NavigationView {
-            VStack {
-                Header(viewModel: UserViewModel(mockData: true))
+            VStack(spacing: 0) {
+                // Conditionally display the Header
+                if selectedTab != "Profile" {
+                    Header(viewModel: userViewModel, selectedTab: $selectedTab)
+                }
 
+                // Switch between different tabs/pages
                 switch selectedTab {
                 case "Home":
                     HomePage()
                         .onAppear {
                             NotificationManager.shared.requestNotificationPermission()
-                            NotificationManager.shared.scheduleTestMessage()
                         }
                 case "Promos":
-                    PromosPage()
+                    // Pass the shared LocationManager to PromosPage
+                    PromosPage(locationManager: locationManager)
                 case "Accounts":
                     AccountsPage()
                 case "Profile":
-                    ProfilePage()
+                    ProfilePage(selectedTab: $selectedTab)
                 default:
                     EmptyView()
                 }
@@ -42,10 +48,10 @@ struct ContentView: View {
                     print("Error signing out: \(error.localizedDescription)")
                 }
             })
-            // Add a hidden NavigationLink for navigation when notification is tapped
+            // Hidden NavigationLink for navigation when notification is tapped
             .background(
                 NavigationLink(
-                    destination: PromosPage(),
+                    destination: PromosPage(locationManager: locationManager),
                     isActive: $showOffersList,
                     label: {
                         EmptyView()
@@ -53,10 +59,21 @@ struct ContentView: View {
                 )
                 .hidden()
             )
-            // Listen for the notification
+            // Listen for the "ShowOffersList" notification to navigate to PromosPage
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowOffersList"))) { _ in
                 self.showOffersList = true
             }
         }
+        .environmentObject(locationManager) // <-- Inject LocationManager here
+        .environmentObject(userViewModel)   // Existing injection
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .environmentObject(AppState())
+            .environmentObject(UserViewModel(mockData: true))
+            .environmentObject(LocationManager()) // Add for preview
     }
 }
