@@ -4,10 +4,8 @@
 //
 //  Created by Daniel Clavijo on 26/10/24.
 //
-
 import SwiftUI
 import FirebaseFirestore
-
 struct EditProfileView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject var viewModel: UserViewModel
@@ -103,7 +101,6 @@ struct EditProfileView: View {
         }
     }
 }
-
 struct CustomTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
@@ -114,7 +111,6 @@ struct CustomTextFieldStyle: TextFieldStyle {
             )
     }
 }
-
 struct EditProfileView_Previews: PreviewProvider {
     static var previews: some View {
         EditProfileView(viewModel: UserViewModel(mockData: true))

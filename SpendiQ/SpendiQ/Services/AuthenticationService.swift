@@ -1,10 +1,3 @@
-//
-//  AuthenticationService.swift
-//  SpendiQ
-//
-//  Created by Daniel Clavijo on 30/09/24.
-//
-
 import Foundation
 import Combine
 import FirebaseAuth
@@ -22,11 +15,13 @@ protocol AuthenticationServiceProtocol {
 
 class AuthenticationService: AuthenticationServiceProtocol {
     private let db = Firestore.firestore()
+    private var cancellables = Set<AnyCancellable>()
+    
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es_ES")
         formatter.dateFormat = "d 'de' MMMM 'de' yyyy, h:mm:ss'p.m.' z"
-        formatter.timeZone = TimeZone(identifier: "UTC-5")  // Para coincidir con el formato mostrado
+        formatter.timeZone = TimeZone(identifier: "UTC-5")
         return formatter
     }()
     
@@ -35,6 +30,7 @@ class AuthenticationService: AuthenticationServiceProtocol {
         formatter.dateFormat = "dd/M/yyyy"
         return formatter
     }()
+    
     func login(email: String, password: String) -> AnyPublisher<Bool, Error> {
         Deferred {
             Future { promise in
@@ -52,33 +48,39 @@ class AuthenticationService: AuthenticationServiceProtocol {
     func signUp(email: String, password: String, fullName: String, phoneNumber: String, birthDate: String) -> AnyPublisher<Bool, Error> {
         Deferred {
             Future { [weak self] promise in
+                guard let self = self else { return }
+                
                 Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
                     if let error = error {
                         promise(.failure(error))
                         return
                     }
-                    
+
                     guard let userId = authResult?.user.uid else {
                         promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get user ID"])))
                         return
                     }
-                    
-                    let userDocument = self?.db.collection("users").document(userId)
+
                     let userData: [String: Any] = [
                         "fullName": fullName,
                         "email": email,
                         "phoneNumber": phoneNumber,
                         "birthDate": birthDate,
-                        "registrationDate": self?.dateFormatter.string(from: Date()) ?? ""
+                        "registrationDate": self.dateFormatter.string(from: Date()),
+                        "verifiedPhoneNumber": false
                     ]
-                    
-                    userDocument?.setData(userData) { error in
-                        if let error = error {
-                            promise(.failure(error))
-                        } else {
-                            promise(.success(true))
-                        }
-                    }
+
+                    let firebaseFacade = FirebaseFacade()
+                    firebaseFacade.createUserDocument(userId: userId, data: userData)
+                        .sink(receiveCompletion: { completion in
+                            switch completion {
+                            case .finished:
+                                promise(.success(true))
+                            case .failure(let error):
+                                promise(.failure(error))
+                            }
+                        }, receiveValue: { _ in })
+                        .store(in: &self.cancellables)
                 }
             }
         }.eraseToAnyPublisher()
@@ -143,18 +145,28 @@ class AuthenticationService: AuthenticationServiceProtocol {
         guard let firebaseUser = Auth.auth().currentUser else {
             return nil
         }
-        
-        // Primero creamos un usuario básico con los datos de Auth
-        let user = User(from: firebaseUser)
-        
-        // También podríamos obtener los datos adicionales de Firestore si los necesitamos
-        db.collection("users").document(firebaseUser.uid).getDocument { (document, error) in
-            if let document = document, document.exists {
-                // Aquí podrías actualizar los datos del usuario con la información de Firestore
-                // Por ejemplo, a través de un delegate o callback
+
+        var user = User(from: firebaseUser)
+
+        // Fetch additional user data from Firestore
+        db.collection("users").document(firebaseUser.uid).getDocument { [weak self] (document, error) in
+            if let document = document, document.exists, var userData = document.data() {
+                // Update the user object with data from Firestore
+                userData["id"] = firebaseUser.uid
+                userData["email"] = user.email
+                userData["fullName"] = user.fullName
+                userData["phoneNumber"] = user.phoneNumber
+
+                if let verifiedPhoneNumber = userData["verifiedPhoneNumber"] as? Bool {
+                    user.verifiedPhoneNumber = verifiedPhoneNumber
+                }
+
+                // You can notify observers here if needed
+            } else {
+                print("Error fetching user data: \(error?.localizedDescription ?? "Unknown error")")
             }
         }
-        
+
         return user
     }
 }

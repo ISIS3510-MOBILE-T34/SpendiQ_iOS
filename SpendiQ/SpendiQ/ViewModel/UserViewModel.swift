@@ -1,10 +1,3 @@
-//
-//  UserViewModel.swift
-//  SpendiQ
-//
-//  Created by Alonso Hernandez (Fai) on 18/10/24.
-//
-
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
@@ -21,7 +14,10 @@ class UserViewModel: ObservableObject {
                 fullName: "Alonso Hernandez",
                 email: "alonso@example.com",
                 phoneNumber: "+1234567890",
-                birthDate: "01/01/1990"
+                birthDate: "01/01/1990",
+                registrationDate: Date(),
+                verifiedPhoneNumber: false,
+                profilePicture: ""
             )
             self.isLoading = false
         } else {
@@ -37,7 +33,9 @@ class UserViewModel: ObservableObject {
         
         let db = Firestore.firestore()
         db.collection("users").document(currentUser.uid)
-            .addSnapshotListener { snapshot, error in
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
                 if let error = error {
                     print("Error fetching user: \(error)")
                     self.isLoading = false
@@ -61,7 +59,9 @@ class UserViewModel: ObservableObject {
                     email: data["email"] as? String ?? currentUser.email ?? "",
                     phoneNumber: data["phoneNumber"] as? String ?? "",
                     birthDate: data["birthDate"] as? String ?? "",
-                    registrationDate: registrationDate
+                    registrationDate: registrationDate,
+                    verifiedPhoneNumber: data["verifiedPhoneNumber"] as? Bool ?? false,
+                    profilePicture: data["profilePicture"] as? String ?? ""
                 )
                 self.isLoading = false
             }

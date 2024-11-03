@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct TabBar: View {
-    private let locationManager = LocationManager()
     //@Binding permite a esta clase modificar una variable declarada en otra vista
     @Binding var selectedTab: String
     @State private var showSheet = false
@@ -29,10 +28,7 @@ struct TabBar: View {
                     }
                 //.sheet depsliega una vista modal
                     .sheet(isPresented: $showSheet) {
-                        EditTransactionForm(
-                            locationManager: locationManager,
-                            bankAccountViewModel: BankAccountViewModel(), transactionViewModel: TransactionViewModel(),
-                            transaction: nil)
+                        EditTransactionForm(bankAccountViewModel: BankAccountViewModel(), transactionViewModel: TransactionViewModel())
                             .presentationDetents([.large])
                             .presentationDragIndicator(.visible)
                     }

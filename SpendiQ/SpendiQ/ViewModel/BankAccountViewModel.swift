@@ -1,43 +1,32 @@
 // BankAccountViewModel.swift
 
 import FirebaseFirestore
-import FirebaseAuth
 
 class BankAccountViewModel: ObservableObject {
     @Published var accounts: [BankAccount] = []
     private let db = Firestore.firestore()
     
     func addAccount(name: String, amount: Double) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-
         let newAccount = BankAccount(id: nil, name: name, amount: amount)
-
+        
         do {
-            let _ = try db.collection("users").document(userId).collection("accounts").addDocument(from: newAccount) { error in
+            let _ = try db.collection("accounts").addDocument(from: newAccount) { error in
                 if let error = error {
-                    print("Error al guardar la cuenta: \(error.localizedDescription)")
+                    print("Error saving account: \(error.localizedDescription)")
                 } else {
-                    print("Cuenta guardada exitosamente")
+                    print("Account saved successfully")
                     self.getBankAccounts()
                 }
             }
         } catch {
-            print("Error al guardar la cuenta: \(error.localizedDescription)")
+            print("Error saving account: \(error.localizedDescription)")
         }
     }
     
     func getBankAccounts() {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-
-        db.collection("users").document(userId).collection("accounts").getDocuments { (querySnapshot, error) in
+        db.collection("accounts").getDocuments { (querySnapshot, error) in
             if let error = error {
-                print("Error al recuperar las cuentas: \(error.localizedDescription)")
+                print("Error retrieving accounts: \(error.localizedDescription)")
             } else {
                 let accounts = querySnapshot?.documents.compactMap { document -> BankAccount? in
                     var account = try? document.data(as: BankAccount.self)
@@ -46,64 +35,49 @@ class BankAccountViewModel: ObservableObject {
                 }
                 DispatchQueue.main.async {
                     self.accounts = accounts ?? []
-                    print("Cuentas cargadas: \(self.accounts)")
+                    print("Loaded accounts: \(self.accounts)")
                 }
             }
         }
     }
     
     func deleteAccount(accountID: String) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-
-        db.collection("users").document(userId).collection("accounts").document(accountID).delete { error in
+        db.collection("accounts").document(accountID).delete { error in
             if let error = error {
-                print("Error al eliminar la cuenta: \(error.localizedDescription)")
+                print("Error deleting account: \(error.localizedDescription)")
             } else {
-                print("Cuenta eliminada exitosamente")
+                print("Account deleted successfully")
                 self.getBankAccounts()
             }
         }
     }
     
     func updateAccount(accountID: String, newName: String, newBalance: Double) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-
-        db.collection("users").document(userId).collection("accounts").document(accountID).updateData([
+        db.collection("accounts").document(accountID).updateData([
             "name": newName,
             "amount": newBalance
         ]) { error in
             if let error = error {
-                print("Error al actualizar la cuenta: \(error.localizedDescription)")
+                print("Error updating account: \(error.localizedDescription)")
             } else {
-                print("Cuenta actualizada exitosamente")
+                print("Account updated successfully")
                 self.getBankAccounts()
             }
         }
     }
     
     func updateAccountBalance(accountID: String, amountChange: Double) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-
-        db.collection("users").document(userId).collection("accounts").document(accountID).getDocument { (document, error) in
+        db.collection("accounts").document(accountID).getDocument { (document, error) in
             if let document = document, document.exists {
                 let currentBalance = document.data()?["amount"] as? Double ?? 0.0
                 let newBalance = currentBalance + amountChange
-                self.db.collection("users").document(userId).collection("accounts").document(accountID).updateData([
+                self.db.collection("accounts").document(accountID).updateData([
                     "amount": newBalance
                 ]) { error in
                     if let error = error {
-                        print("Error al actualizar el saldo de la cuenta: \(error.localizedDescription)")
+                        print("Error updating account balance: \(error.localizedDescription)")
                     } else {
-                        print("Saldo de la cuenta actualizado")
+                        print("Account balance updated")
                         self.getBankAccounts()
                     }
                 }

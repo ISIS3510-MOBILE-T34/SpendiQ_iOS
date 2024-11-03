@@ -1,66 +1,53 @@
+// MovementResume.swift
+
 import SwiftUI
 
 struct MovementResume: View {
     var transaction: Transaction
-    private let locationManager = LocationManager()
     @ObservedObject var viewModel: TransactionViewModel
     @State private var showEditForm = false
 
     var body: some View {
-        HStack(spacing: 4) {
-            ZStack {
+        HStack (spacing: 4 ){
+            ZStack{
                 Circle()
-                    .frame(width: 48, height: 48)
+                    .frame(width:48, height:48)
                     .foregroundStyle(.yellow)
                 Text(selectEmoji(for: transaction.transactionType))
                     .font(.largeTitle)
             }
-            .padding(.leading, 16)
+            .padding(.leading,16)
             
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
-                    Text(transaction.transactionName)
-                        .fontWeight(.regular)
-                    
-                    // Mostrar íconos de anomalía si corresponden
-                    if transaction.amountAnomaly {
-                        Image(systemName: "creditcard.fill")
-                            .foregroundColor(.red)
-                            .font(.system(size: 14))
-                    }
-                    
-                    if transaction.locationAnomaly {
-                        Image(systemName: "mappin")
-                            .foregroundColor(.orange)
-                            .font(.system(size: 14))
-                    }
-                }
+            VStack (alignment:.leading, spacing: 4){
+                Text(transaction.transactionName)
+                    .fontWeight(.regular)
                 
-                HStack {
-                    Text(viewModel.accounts[transaction.accountId] ?? "Loading...")
+                HStack{
+                    Text(viewModel.accounts[transaction.fromAccountID] ?? "Loading...")
                         .fontWeight(.light)
-                        .font(.system(size: 14))
+                        .font(.system(size:14))
                     
                     Divider()
-                        .frame(height: 14)
+                        .frame(height:14)
                     
-                    Text(formatTime(transaction.dateTime.dateValue()))
+                    Text(formatTime(transaction.dateTime))
                         .fontWeight(.light)
-                        .font(.system(size: 14))
+                        .font(.system(size:14))
                 }
+                
             }
-            
+
             Spacer()
             
             if transaction.transactionType == "Expense" {
                 Text("-$ \(Int(transaction.amount))")
                     .fontWeight(.medium)
-                    .font(.system(size: 16))
+                    .font(.system(size:16))
                     .foregroundStyle(.red)
             } else {
                 Text("+$ \(Int(transaction.amount))")
                     .fontWeight(.medium)
-                    .font(.system(size: 16))
+                    .font(.system(size:16))
                     .foregroundStyle(.primarySpendiq)
             }
         }
@@ -70,15 +57,14 @@ struct MovementResume: View {
         }
         .sheet(isPresented: $showEditForm) {
             EditTransactionForm(
-                locationManager: locationManager,
                 bankAccountViewModel: BankAccountViewModel(),
                 transactionViewModel: viewModel,
                 transaction: transaction
             )
         }
         .onAppear {
-            if viewModel.accounts[transaction.accountId] == nil {
-                viewModel.getAccountName(accountID: transaction.accountId)
+            if viewModel.accounts[transaction.fromAccountID] == nil {
+                viewModel.getAccountName(fromAccountID: transaction.fromAccountID)
             }
         }
     }

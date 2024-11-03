@@ -1,10 +1,3 @@
-//
-//  OfferCardView.swift
-//  SpendiQ
-//
-//  Created by Fai on 18/10/24.
-//
-
 import SwiftUI
 
 struct OfferCardView: View {
@@ -13,24 +6,27 @@ struct OfferCardView: View {
     var body: some View {
         NavigationLink(destination: OfferDetailView(offer: offer)) {
             VStack(alignment: .leading) {
-                HStack {
+                HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(offer.placeName) // Updated to use placeName
+                        Text(offer.placeName)
                             .font(.headline)
+                            .multilineTextAlignment(.leading)
                         
-                        // Display distance in meters or kilometers
-                        Text(displayDistance(offer.distance))
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        Text(offer.offerDescription) // Short description of the offer
+                        Text(offer.offerDescription)
                             .font(.title3)
                             .fontWeight(.bold)
                             .foregroundColor(.orange)
+                            .multilineTextAlignment(.leading)
                         
-                        Text(offer.recommendationReason) // Reason why the offer is recommended
-                            .font(.footnote)
+                        Text(displayDistance(offer.distance))
+                            .font(.subheadline)
                             .foregroundColor(.gray)
+                            .multilineTextAlignment(.leading)
+                        
+                        Text(offer.recommendationReason)
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                            .multilineTextAlignment(.leading)
                     }
                     Spacer()
                     
@@ -41,14 +37,9 @@ struct OfferCardView: View {
                             .frame(width: 50, height: 50)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     } placeholder: {
-                        ProgressView() // Show a placeholder (spinner) while loading
+                        ProgressView()
                     }
                 }
-                
-                Text("Recommended: \(offer.recommendationReason)") // Recommendation reason
-                    .font(.caption)
-                    .foregroundColor(.blue)
-                    .padding(.top, 4)
             }
             .padding()
             .background(Color.white)

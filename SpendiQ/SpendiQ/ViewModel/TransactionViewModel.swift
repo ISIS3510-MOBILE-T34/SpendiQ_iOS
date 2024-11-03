@@ -1,42 +1,32 @@
+// TransactionViewModel.swift
+
 import FirebaseFirestore
-import FirebaseAuth
-import CoreLocation
 
 class TransactionViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var transactionsByDay: [String: [Transaction]] = [:]
-    @Published var totalByDay: [String: Int64] = [:]
+    @Published var totalByDay: [String: Float] = [:]
     @Published var accounts: [String: String] = [:]
-    @Published var isLoading = false
-    
     private let db = Firestore.firestore()
     private let bankAccountViewModel = BankAccountViewModel()
-    private let locationManager = LocationManager()
     
     func getTransactionsForAllAccounts() {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-        
-        isLoading = true
-        db.collection("users").document(userId).collection("accounts").getDocuments { (querySnapshot, error) in
+        db.collection("accounts").getDocuments { (querySnapshot, error) in
             if let error = error {
-                print("Error al recuperar las cuentas: \(error.localizedDescription)")
-                self.isLoading = false
+                print("Error retrieving accounts: \(error.localizedDescription)")
             } else {
                 var transactionsTemp: [Transaction] = []
                 var transactionsByDayTemp: [String: [Transaction]] = [:]
-                var totalByDayTemp: [String: Int64] = [:]
+                var totalByDayTemp: [String: Float] = [:]
                 
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd"
                 
                 for document in querySnapshot?.documents ?? [] {
                     let accountID = document.documentID
-                    self.db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
+                    self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
                         if let error = error {
-                            print("Error al recuperar las transacciones: \(error.localizedDescription)")
+                            print("Error retrieving transactions: \(error.localizedDescription)")
                         } else {
                             for transactionDoc in transactionSnapshot?.documents ?? [] {
                                 var transaction = try? transactionDoc.data(as: Transaction.self)
@@ -44,14 +34,18 @@ class TransactionViewModel: ObservableObject {
                                 
                                 if let transaction = transaction {
                                     transactionsTemp.append(transaction)
-                                    let day = dateFormatter.string(from: transaction.dateTime.dateValue())
+                                    
+                                    let day = dateFormatter.string(from: transaction.dateTime)
+                                    
                                     if transactionsByDayTemp[day] != nil {
                                         transactionsByDayTemp[day]?.append(transaction)
                                     } else {
                                         transactionsByDayTemp[day] = [transaction]
                                     }
                                     
-                                    totalByDayTemp[day] = (totalByDayTemp[day] ?? 0) + transaction.amount
+                                    totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
+                                    
+                                    self.getAccountName(fromAccountID: transaction.fromAccountID)
                                 }
                             }
                         }
@@ -60,7 +54,6 @@ class TransactionViewModel: ObservableObject {
                             self.transactions = transactionsTemp
                             self.transactionsByDay = transactionsByDayTemp
                             self.totalByDay = totalByDayTemp
-                            self.isLoading = false
                         }
                     }
                 }
@@ -68,192 +61,142 @@ class TransactionViewModel: ObservableObject {
         }
     }
     
-    func addTransaction(accountID: String, transactionName: String, amount: Int64, transactionType: String, dateTime: Timestamp, location: Location?) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-        
-        guard !accountID.isEmpty else {
-            print("Error: accountID está vacío")
-            return
-        }
-        
+    func addTransaction(accountID: String, transactionName: String, amount: Float, fromAccountID: String?, toAccountID: String?, transactionType: String, dateTime: Date) {
         let newTransaction = Transaction(
-            id: "", // Firestore asignará automáticamente el `id` al crear el documento
-            accountId: accountID,
             transactionName: transactionName,
             amount: amount,
-            dateTime: dateTime,
+            fromAccountID: fromAccountID ?? "",
+            toAccountID: toAccountID,
             transactionType: transactionType,
-            location: location,
-            amountAnomaly: false,
-            locationAnomaly: false
+            dateTime: dateTime
         )
         
         do {
-            let _ = try db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").addDocument(from: newTransaction) { error in
+            let _ = try db.collection("accounts").document(accountID).collection("transactions").addDocument(from: newTransaction) { error in
                 if let error = error {
-                    print("Error al guardar la transacción: \(error.localizedDescription)")
+                    print("Error saving transaction: \(error.localizedDescription)")
                 } else {
-                    print("Transacción guardada exitosamente")
+                    print("Transaction saved successfully")
                     self.updateAccountBalanceOnAdd(accountID: accountID, amount: amount, transactionType: transactionType)
                     self.getTransactionsForAllAccounts()
-                    
-                    // Llamada al endpoint después de agregar la transacción
-                    self.analyzeTransaction(userId: userId, transactionId: newTransaction.id ?? "")
                 }
             }
         } catch {
-            print("Error al guardar la transacción: \(error.localizedDescription)")
+            print("Error saving transaction: \(error.localizedDescription)")
         }
     }
     
-    func updateTransaction(transaction: Transaction, transactionName: String, amount: Int64, transactionType: String, dateTime: Timestamp, location: Location) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-        
+    func updateTransaction(transaction: Transaction, transactionName: String, amount: Float, fromAccountID: String, toAccountID: String?, transactionType: String, dateTime: Date) {
+        guard let transactionID = transaction.id else { return }
         let updatedTransaction = Transaction(
-            id: transaction.id,
-            accountId: transaction.accountId,
             transactionName: transactionName,
             amount: amount,
-            dateTime: dateTime,
+            fromAccountID: fromAccountID,
+            toAccountID: toAccountID,
             transactionType: transactionType,
-            location: location,
-            amountAnomaly: transaction.amountAnomaly,
-            locationAnomaly: transaction.locationAnomaly
+            dateTime: dateTime
         )
         
         do {
-            try db.collection("users").document(userId).collection("accounts").document(transaction.accountId).collection("transactions").document(transaction.id ?? "").setData(from: updatedTransaction) { error in
+            try db.collection("accounts").document(fromAccountID).collection("transactions").document(transactionID).setData(from: updatedTransaction) { error in
                 if let error = error {
-                    print("Error al actualizar la transacción: \(error.localizedDescription)")
+                    print("Error updating transaction: \(error.localizedDescription)")
                 } else {
-                    print("Transacción actualizada exitosamente")
+                    print("Transaction updated successfully")
                     self.adjustAccountBalanceAfterEdit(oldTransaction: transaction, newTransaction: updatedTransaction)
                     self.getTransactionsForAllAccounts()
-                    
-                    // Llamada al endpoint después de actualizar la transacción
-                    self.analyzeTransaction(userId: userId, transactionId: transaction.id ?? "")
                 }
             }
         } catch {
-            print("Error al actualizar la transacción: \(error.localizedDescription)")
+            print("Error updating transaction: \(error.localizedDescription)")
         }
     }
     
     func deleteTransaction(accountID: String, transactionID: String) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
-            return
-        }
-        
-        db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").document(transactionID).getDocument { (document, error) in
+        db.collection("accounts").document(accountID).collection("transactions").document(transactionID).getDocument { (document, error) in
             if let document = document, document.exists {
                 let transaction = try? document.data(as: Transaction.self)
                 if let transaction = transaction {
-                    self.db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").document(transactionID).delete { error in
+                    self.db.collection("accounts").document(accountID).collection("transactions").document(transactionID).delete { error in
                         if let error = error {
-                            print("Error al eliminar la transacción: \(error.localizedDescription)")
+                            print("Error deleting transaction: \(error.localizedDescription)")
                         } else {
-                            print("Transacción eliminada exitosamente")
+                            print("Transaction deleted successfully")
                             self.reverseAccountBalance(accountID: accountID, amount: transaction.amount, transactionType: transaction.transactionType)
                             self.getTransactionsForAllAccounts()
                         }
                     }
                 }
             } else {
-                print("Transacción no encontrada para eliminar")
+                print("Transaction not found for deletion")
             }
         }
     }
     
-    func getAccountName(accountID: String) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
+    func getAccountName(fromAccountID: String) {
+        if accounts[fromAccountID] != nil {
             return
         }
         
-        if accounts[accountID] != nil {
-            return
-        }
-        
-        db.collection("users").document(userId).collection("accounts").document(accountID).getDocument { (document, error) in
+        db.collection("accounts").document(fromAccountID).getDocument { (document, error) in
             if let document = document, document.exists {
-                let accountName = document.data()?["name"] as? String ?? "Cuenta desconocida"
+                let accountName = document.data()?["name"] as? String ?? "Unknown Account"
                 DispatchQueue.main.async {
-                    self.accounts[accountID] = accountName
+                    self.accounts[fromAccountID] = accountName
                 }
             } else {
-                print("Cuenta no encontrada para ID: \(accountID)")
+                print("Account not found for ID: \(fromAccountID)")
             }
         }
     }
     
-    private func updateAccountBalanceOnAdd(accountID: String, amount: Int64, transactionType: String) {
-        var amountChange: Int64 = 0
+    private func updateAccountBalanceOnAdd(accountID: String, amount: Float, transactionType: String) {
+        var amountChange: Double = 0.0
         
         if transactionType == "Expense" {
-            amountChange = -amount
+            amountChange = -Double(amount)
         } else if transactionType == "Income" {
-            amountChange = amount
+            amountChange = Double(amount)
         }
         
-        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: Double(amountChange))
+        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: amountChange)
     }
     
-    private func reverseAccountBalance(accountID: String, amount: Int64, transactionType: String) {
-        var amountChange: Int64 = 0
+    private func reverseAccountBalance(accountID: String, amount: Float, transactionType: String) {
+        var amountChange: Double = 0.0
         
         if transactionType == "Expense" {
-            amountChange = amount
+            amountChange = Double(amount)
         } else if transactionType == "Income" {
-            amountChange = -amount
+            amountChange = -Double(amount)
         }
         
-        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: Double(amountChange))
+        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: amountChange)
     }
     
     private func adjustAccountBalanceAfterEdit(oldTransaction: Transaction, newTransaction: Transaction) {
-        guard oldTransaction.accountId == newTransaction.accountId else {
+        guard oldTransaction.fromAccountID == newTransaction.fromAccountID else {
+            // Handle account change if needed
             return
         }
         
-        let accountID = newTransaction.accountId
-        var amountChange: Int64 = 0
+        let accountID = newTransaction.fromAccountID
+        var amountChange: Double = 0.0
         
+        // Reverse old transaction effect
         if oldTransaction.transactionType == "Expense" {
-            amountChange += oldTransaction.amount
+            amountChange += Double(oldTransaction.amount)
         } else if oldTransaction.transactionType == "Income" {
-            amountChange -= oldTransaction.amount
+            amountChange -= Double(oldTransaction.amount)
         }
         
+        // Apply new transaction effect
         if newTransaction.transactionType == "Expense" {
-            amountChange -= newTransaction.amount
+            amountChange -= Double(newTransaction.amount)
         } else if newTransaction.transactionType == "Income" {
-            amountChange += newTransaction.amount
+            amountChange += Double(newTransaction.amount)
         }
         
-        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: Double(amountChange))
-    }
-    
-    private func analyzeTransaction(userId: String, transactionId: String) {
-        let urlString = "http://148.113.204.223:8000/api/analyze-transaction-complete/\(userId)/\(transactionId)"
-        guard let url = URL(string: urlString) else { return }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Error al llamar al endpoint de análisis: \(error.localizedDescription)")
-            } else {
-                print("Llamado al endpoint de análisis exitoso")
-            }
-        }.resume()
+        bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: amountChange)
     }
 }
-

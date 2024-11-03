@@ -1,72 +1,146 @@
 import SwiftUI
 import FirebaseFirestore
+import CoreLocation
+import Combine
 
 class OfferViewModel: ObservableObject {
     @Published var offers: [Offer] = []
     @Published var isLoading: Bool = true
+    @Published var showNoOffersMessage: Bool = false
     
-    init(mockData: Bool = false) {
+    private let db = Firestore.firestore()
+    private var cancellables = Set<AnyCancellable>()
+    private var userLocation: CLLocation?
+    
+    private var noOffersTimer: Timer?
+    private var fetchOffersTimer: Timer?
+    private var isFetching: Bool = false
+    
+    init(locationManager: LocationManager, mockData: Bool = false) {
         if mockData {
-            // Provide some mock data for preview purposes
-            self.offers = [
-                Offer(id: "1",
-                      placeName: "McDonald's Parque 93",
-                      offerDescription: "Get 20% off on all meals!",
-                      recommendationReason: "You have bought 30 times in the last month",
-                      shopImage: "https://pbs.twimg.com/profile_images/1798086490502643712/ntN62oCw_400x400.jpg", // Replace with your asset
-                      latitude: 4.676,
-                      longitude: -74.048,
-                      distance: 500), // 500 meters
-                    
-                Offer(id: "2",
-                      placeName: "Starbucks",
-                      offerDescription: "Buy 1 get 1 free on all drinks!",
-                      recommendationReason: "Great for coffee lovers",
-                      shopImage: "https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png", // Replace with your asset
-                      latitude: 4.670,
-                      longitude: -74.050,
-                      distance: 200), // 200 meters
-                    
-                Offer(id: "3",
-                      placeName: "Nike Store",
-                      offerDescription: "Get 20% off on all sportswear!",
-                      recommendationReason: "Recommended for athletes",
-                      shopImage: "https://thumbs.dreamstime.com/b/conception-de-vecteur-logo-nike-noir-noire-sport-prête-à-imprimer-l-illustration-183282273.jpg", // Replace with your asset
-                      latitude: 4.677,
-                      longitude: -74.049,
-                      distance: 1000) // 1 km
-            ]
+            // Mock data
+            self.offers = []
             self.isLoading = false
+            self.showNoOffersMessage = self.offers.isEmpty
         } else {
-            fetchOffersFromFirebase() // Fetch offers when ViewModel is initialized
+            // Observe location updates
+            locationManager.$location
+                .sink { [weak self] location in
+                    guard let self = self else { return }
+                    self.userLocation = location
+                    self.fetchOffers()
+                }
+                .store(in: &cancellables)
+            
+            // Start timer to fetch offers every 10 seconds
+            fetchOffersTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+                self?.fetchOffers()
+            }
         }
     }
     
-    func fetchOffersFromFirebase() {
-        let db = Firestore.firestore()
-        db.collection("offers").getDocuments { snapshot, error in
+    func fetchOffers() {
+        guard let userLocation = self.userLocation else {
+            print("User location not available.")
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.showNoOffersMessage = true
+            }
+            return
+        }
+        
+        guard !isFetching else {
+            print("Fetch already in progress.")
+            return
+        }
+        
+        isFetching = true
+        self.isLoading = true
+        self.showNoOffersMessage = false
+        
+        noOffersTimer?.invalidate()
+        noOffersTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            if self.offers.isEmpty {
+                self.showNoOffersMessage = true
+                print("No offers found within 6 seconds.")
+            }
+        }
+        
+        print("Fetching offers for location: \(userLocation.coordinate.latitude), \(userLocation.coordinate.longitude)")
+        
+        db.collection("offers").getDocuments { [weak self] snapshot, error in
+            guard let self = self else { return }
+            defer { self.isFetching = false }
+            
             if let error = error {
-                print("Error fetching offers: \(error)")
+                print("Error fetching offers: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.showNoOffersMessage = true
+                }
                 return
             }
             
-            guard let documents = snapshot?.documents else { return }
-            
-            self.offers = documents.compactMap { doc in
-                let data = doc.data()
-                return Offer(
-                    id: doc.documentID,
-                    placeName: data["placeName"] as? String ?? "",
-                    offerDescription: data["offerDescription"] as? String ?? "",
-                    recommendationReason: data["recommendationReason"] as? String ?? "",
-                    shopImage: data["shopImage"] as? String ?? "",
-                    latitude: data["latitude"] as? Double ?? 0.0,
-                    longitude: data["longitude"] as? Double ?? 0.0,
-                    distance: data["distance"] as? Int ?? 0 // Default to 0 if not found
-                )
+            guard let documents = snapshot?.documents else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.showNoOffersMessage = true
+                }
+                return
             }
-            print("Offers data loaded: ", self.offers)
-            self.isLoading = false
+            
+            var fetchedOffers: [Offer] = []
+            
+            for doc in documents {
+                let data = doc.data()
+                guard
+                    let shopName = data["placeName"] as? String,
+                    let offerDescription = data["offerDescription"] as? String,
+                    let recommendationReason = data["recommendationReason"] as? String,
+                    let shopImage = data["shopImage"] as? String,
+                    let latitude = data["latitude"] as? Double,
+                    let longitude = data["longitude"] as? Double
+                else {
+                    print("Incomplete offer data for document ID: \(doc.documentID)")
+                    continue
+                }
+                
+                let shopLocation = CLLocation(latitude: latitude, longitude: longitude)
+                let distanceInMeters = userLocation.distance(from: shopLocation)
+                
+                print("Offer '\(shopName)' is \(distanceInMeters) meters away from the user.")
+                
+                if distanceInMeters <= 1000 {
+                    let offer = Offer(
+                        id: doc.documentID,
+                        placeName: shopName,
+                        offerDescription: offerDescription,
+                        recommendationReason: recommendationReason,
+                        shopImage: shopImage,
+                        latitude: latitude,
+                        longitude: longitude,
+                        distance: Int(distanceInMeters),
+                        shop: ""
+                    )
+                    if !self.offers.contains(offer) {
+                        fetchedOffers.append(offer)
+                    }
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self.offers.append(contentsOf: fetchedOffers)
+                self.offers.sort { $0.distance < $1.distance }
+                self.isLoading = false
+                self.noOffersTimer?.invalidate()
+                self.showNoOffersMessage = self.offers.isEmpty
+            }
         }
+    }
+    
+    deinit {
+        fetchOffersTimer?.invalidate()
+        noOffersTimer?.invalidate()
     }
 }
