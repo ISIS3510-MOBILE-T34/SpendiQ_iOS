@@ -1,7 +1,8 @@
 import Foundation
+import FirebaseFirestore
 
 struct BankAccount: Codable, Identifiable, Equatable {
-    var id: String? 
+    @DocumentID var id: String?
     var name: String
     var amount: Double
 }

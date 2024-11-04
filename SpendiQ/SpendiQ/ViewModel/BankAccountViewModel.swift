@@ -14,7 +14,7 @@ class BankAccountViewModel: ObservableObject {
             return
         }
 
-        let newAccount = BankAccount(id: nil, name: name, amount: amount)
+        let newAccount = BankAccount(name: name, amount: amount)
 
         do {
             let _ = try db.collection("users").document(userId).collection("accounts").addDocument(from: newAccount) { error in
@@ -49,6 +49,7 @@ class BankAccountViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.accounts = accounts ?? []
                     print("Cuentas cargadas: \(self.accounts)")
+                    
                 }
             }
         }
