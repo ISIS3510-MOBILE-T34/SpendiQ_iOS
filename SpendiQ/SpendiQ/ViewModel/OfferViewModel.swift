@@ -67,7 +67,7 @@ class OfferViewModel: ObservableObject {
             }
         }
         
-        print("Fetching offers for location: \(userLocation.coordinate.latitude), \(userLocation.coordinate.longitude)")
+        //print("Fetching offers for location: \(userLocation.coordinate.latitude), \(userLocation.coordinate.longitude)")
         
         db.collection("offers").getDocuments { [weak self] snapshot, error in
             guard let self = self else { return }
@@ -109,7 +109,7 @@ class OfferViewModel: ObservableObject {
                 let shopLocation = CLLocation(latitude: latitude, longitude: longitude)
                 let distanceInMeters = userLocation.distance(from: shopLocation)
                 
-                print("Offer '\(shopName)' is \(distanceInMeters) meters away from the user.")
+                //print("Offer '\(shopName)' is \(distanceInMeters) meters away from the user.")
                 
                 if distanceInMeters <= 1000 {
                     let offer = Offer(
