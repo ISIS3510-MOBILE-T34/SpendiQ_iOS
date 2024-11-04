@@ -4,22 +4,51 @@
 //
 //  Created by Fai on 25/09/24.
 //
-
 import Foundation
 import Combine
 import CoreLocation
 
+@MainActor
 class SpecialOffersViewModel: ObservableObject {
-    @Published var offers: [OfferModel] = []
+    @Published var offers: [Offer] = []
     @Published var userName: String = "User"
-    private var dataService = DataService()
-    private var locationManager = LocationManager()
-    private var cancellables = Set<AnyCancellable>()
+    @Published var isLoading: Bool = false
+    @Published var error: String?
     
-    init() {
+    private var dataService = DataService()
+    private var locationManager: LocationManager
+    private var cancellables = Set<AnyCancellable>()
+    private let processingQueue = DispatchQueue(label: "com.spendiq.offersprocessing", qos: .userInitiated)
+    
+    init(locationManager: LocationManager = LocationManager()) {
+        self.locationManager = locationManager
+        setupBindings()
+        Task {
+            await fetchInitialData()
+        }
+    }
+    
+    private func setupBindings() {
+        locationManager.$location
+            .debounce(for: .seconds(1), scheduler: processingQueue)
+            .compactMap { $0 }
+            .sink { [weak self] location in
+                Task { [weak self] in
+                    await self?.updateOffersWithLocation(location)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func fetchInitialData() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        // Fetch user name
         fetchUserName()
-        fetchOffers()
-        observeLocation()
+        
+        // Fetch offers
+        await fetchOffers()
     }
     
     private func fetchUserName() {
@@ -27,31 +56,44 @@ class SpecialOffersViewModel: ObservableObject {
         userName = "John"
     }
     
-    private func fetchOffers() {
-        dataService.fetchOffers { [weak self] fetchedOffers in
-            DispatchQueue.main.async {
-                self?.offers = fetchedOffers
+    func fetchOffers() async {
+        isLoading = true
+        error = nil
+        
+        do {
+            var fetchedOffers = try await dataService.fetchOffers()
+            
+            if let currentLocation = locationManager.location {
+                fetchedOffers = await dataService.processOffersWithDistance(
+                    offers: fetchedOffers,
+                    userLocation: currentLocation
+                )
             }
+            
+            offers = fetchedOffers
+            
+        } catch {
+            self.error = error.localizedDescription
         }
+        
+        isLoading = false
     }
     
-    private func observeLocation() {
-        locationManager.$location
-            .sink { [weak self] location in
-                guard let self = self, let userLocation = location else { return }
-                self.calculateDistances(from: userLocation)
-            }
-            .store(in: &cancellables)
+    private func updateOffersWithLocation(_ location: CLLocation) async {
+        guard !offers.isEmpty else { return }
+        
+        let processedOffers = await dataService.processOffersWithDistance(
+            offers: offers,
+            userLocation: location
+        )
+        
+        offers = processedOffers
     }
     
-    private func calculateDistances(from userLocation: CLLocation) {
-        offers = offers.map { offer in
-            var updatedOffer = offer
-            let offerLocation = CLLocation(latitude: offer.latitude, longitude: offer.longitude)
-            let distanceInMeters = userLocation.distance(from: offerLocation)
-            updatedOffer.distance = distanceInMeters
-            return updatedOffer
+    // Public method to refresh data
+    func refreshData() {
+        Task {
+            await fetchOffers()
         }
-        .sorted { ($0.distance ?? 0) < ($1.distance ?? 0) }
     }
 }

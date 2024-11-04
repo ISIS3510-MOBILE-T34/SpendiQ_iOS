@@ -11,32 +11,49 @@ struct SpecialOffersListView: View {
     @ObservedObject var viewModel: SpecialOffersViewModel
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header placeholder
-            Color.clear.frame(height: 50)
-            
-            // Main content
-            ScrollView {
-                VStack {
-                    ForEach(viewModel.offers, id: \.id) { offer in
-                        NavigationLink(destination: OfferDetailView(offer: offer)) {
-                            OfferBubbleView(offer: offer)
+        ZStack {
+            VStack(spacing: 0) {
+                // Header placeholder
+                Color.clear.frame(height: 50)
+                
+                if viewModel.isLoading {
+                    // Loading state
+                    ProgressView("Loading offers...")
+                        .padding()
+                } else if let error = viewModel.error {
+                    // Error state
+                    VStack {
+                        Text("Error loading offers")
+                            .foregroundColor(.red)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Button("Retry") {
+                            viewModel.refreshData()
                         }
+                        .padding()
+                    }
+                } else {
+                    // Content
+                    ScrollView {
+                        VStack {
+                            ForEach(viewModel.offers) { offer in
+                                NavigationLink(destination: OfferDetailView(offer: offer)) {
+                                    OfferBubbleView(offer: offer)
+                                }
+                            }
+                        }
+                        .padding()
+                    }
+                    .refreshable {
+                        viewModel.refreshData()
                     }
                 }
-                .padding()
+                
+                // Footer placeholder
+                Color.clear.frame(height: 50)
             }
-            
-            // Footer placeholder
-            Color.clear.frame(height: 50)
         }
         .navigationBarTitle("Special Offers", displayMode: .inline)
-    }
-}
-
-struct SpecialOffersListView_Previews: PreviewProvider {
-    static var previews: some View {
-        let viewModel = SpecialOffersViewModel()
-        SpecialOffersListView(viewModel: viewModel)
     }
 }
