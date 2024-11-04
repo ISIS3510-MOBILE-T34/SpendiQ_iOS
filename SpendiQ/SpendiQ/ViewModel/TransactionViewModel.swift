@@ -1,5 +1,6 @@
 import FirebaseFirestore
 import FirebaseAuth
+import CoreData
 import CoreLocation
 
 class TransactionViewModel: ObservableObject {
@@ -12,31 +13,121 @@ class TransactionViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private let bankAccountViewModel = BankAccountViewModel()
     private let locationManager = LocationManager()
+    private let context = PersistenceController.shared.container.viewContext
+
+    init() {
+        loadTransactionsFromCache()
+    }
     
-    func getTransactionsForAllAccounts() {
+    // MARK: - Cache Methods
+    
+    private func loadTransactionsFromCache() {
+        let fetchRequest: NSFetchRequest<CachedTransaction> = CachedTransaction.fetchRequest()
+        
+        do {
+            let cachedTransactions = try context.fetch(fetchRequest)
+            let transactionsTemp = cachedTransactions.map { cached in
+                Transaction(
+                    id: cached.id ?? "",
+                    accountId: cached.accountId ?? "",
+                    transactionName: cached.transactionName ?? "",
+                    amount: cached.amount,
+                    dateTime: Timestamp(date: cached.dateTime ?? Date()),
+                    transactionType: cached.transactionType ?? "",
+                    location: cached.latitude != 0 && cached.longitude != 0
+                        ? Location(latitude: cached.latitude, longitude: cached.longitude)
+                        : nil,
+                    amountAnomaly: cached.amountAnomaly,
+                    locationAnomaly: cached.locationAnomaly
+                )
+            }
+            self.transactions = transactionsTemp
+            self.groupTransactionsByDay()
+        } catch {
+            print("Error loading transactions from cache: \(error.localizedDescription)")
+        }
+    }
+    
+    private func cacheTransaction(_ transaction: Transaction) {
+        let cachedTransaction = CachedTransaction(context: context)
+        cachedTransaction.id = transaction.id
+        cachedTransaction.accountId = transaction.accountId
+        cachedTransaction.transactionName = transaction.transactionName
+        cachedTransaction.amount = transaction.amount
+        cachedTransaction.dateTime = transaction.dateTime.dateValue()
+        cachedTransaction.transactionType = transaction.transactionType
+        cachedTransaction.latitude = transaction.location?.latitude ?? 0.0
+        cachedTransaction.longitude = transaction.location?.longitude ?? 0.0
+        cachedTransaction.amountAnomaly = transaction.amountAnomaly
+        cachedTransaction.locationAnomaly = transaction.locationAnomaly
+        
+        do {
+            try context.save()
+        } catch {
+            print("Error saving transaction in cache: \(error.localizedDescription)")
+        }
+    }
+    
+    private func clearCache() {
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = CachedTransaction.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        do {
+            try context.execute(deleteRequest)
+            try context.save()
+        } catch {
+            print("Error clearing cache: \(error.localizedDescription)")
+        }
+    }
+    
+    private func groupTransactionsByDay() {
+        var groupedTransactions: [String: [Transaction]] = [:]
+        var dailyTotals: [String: Int64] = [:]
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        for transaction in transactions {
+            let day = dateFormatter.string(from: transaction.dateTime.dateValue())
+            if groupedTransactions[day] == nil {
+                groupedTransactions[day] = []
+            }
+            groupedTransactions[day]?.append(transaction)
+            dailyTotals[day] = (dailyTotals[day] ?? 0) + transaction.amount
+        }
+        
+        self.transactionsByDay = groupedTransactions
+        self.totalByDay = dailyTotals
+    }
+    
+    // MARK: - Firestore Methods
+    
+    func getTransactionsForAllAccounts(forceRefresh: Bool = false) {
+        if !forceRefresh && !transactions.isEmpty {
+            print("Currently using cached data")
+            groupTransactionsByDay()
+            return
+        }
+        
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
+            print("User not authenticated")
             return
         }
         
         isLoading = true
+        clearCache()
+        
         db.collection("users").document(userId).collection("accounts").getDocuments { (querySnapshot, error) in
             if let error = error {
-                print("Error al recuperar las cuentas: \(error.localizedDescription)")
+                print("Error retrieving accounts: \(error.localizedDescription)")
                 self.isLoading = false
             } else {
                 var transactionsTemp: [Transaction] = []
-                var transactionsByDayTemp: [String: [Transaction]] = [:]
-                var totalByDayTemp: [String: Int64] = [:]
-                
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
                 
                 for document in querySnapshot?.documents ?? [] {
                     let accountID = document.documentID
                     self.db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
                         if let error = error {
-                            print("Error al recuperar las transacciones: \(error.localizedDescription)")
+                            print("Error retrieving transactions: \(error.localizedDescription)")
                         } else {
                             for transactionDoc in transactionSnapshot?.documents ?? [] {
                                 var transaction = try? transactionDoc.data(as: Transaction.self)
@@ -44,22 +135,14 @@ class TransactionViewModel: ObservableObject {
                                 
                                 if let transaction = transaction {
                                     transactionsTemp.append(transaction)
-                                    let day = dateFormatter.string(from: transaction.dateTime.dateValue())
-                                    if transactionsByDayTemp[day] != nil {
-                                        transactionsByDayTemp[day]?.append(transaction)
-                                    } else {
-                                        transactionsByDayTemp[day] = [transaction]
-                                    }
-                                    
-                                    totalByDayTemp[day] = (totalByDayTemp[day] ?? 0) + transaction.amount
+                                    self.cacheTransaction(transaction)
                                 }
                             }
                         }
                         
                         DispatchQueue.main.async {
                             self.transactions = transactionsTemp
-                            self.transactionsByDay = transactionsByDayTemp
-                            self.totalByDay = totalByDayTemp
+                            self.groupTransactionsByDay()
                             self.isLoading = false
                         }
                     }
@@ -70,17 +153,17 @@ class TransactionViewModel: ObservableObject {
     
     func addTransaction(accountID: String, transactionName: String, amount: Int64, transactionType: String, dateTime: Timestamp, location: Location?) {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
+            print("User not authenticated")
             return
         }
         
         guard !accountID.isEmpty else {
-            print("Error: accountID está vacío")
+            print("Error: Account ID cannot be empty")
             return
         }
         
         let newTransaction = Transaction(
-            id: "", // Firestore asignará automáticamente el `id` al crear el documento
+            id: "",
             accountId: accountID,
             transactionName: transactionName,
             amount: amount,
@@ -94,24 +177,23 @@ class TransactionViewModel: ObservableObject {
         do {
             let _ = try db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").addDocument(from: newTransaction) { error in
                 if let error = error {
-                    print("Error al guardar la transacción: \(error.localizedDescription)")
+                    print("Error saving transaction: \(error.localizedDescription)")
                 } else {
-                    print("Transacción guardada exitosamente")
+                    print("Transaction saved successfully")
                     self.updateAccountBalanceOnAdd(accountID: accountID, amount: amount, transactionType: transactionType)
                     self.getTransactionsForAllAccounts()
-                    
-                    // Llamada al endpoint después de agregar la transacción
+                    self.cacheTransaction(newTransaction)
                     self.analyzeTransaction(userId: userId, transactionId: newTransaction.id ?? "")
                 }
             }
         } catch {
-            print("Error al guardar la transacción: \(error.localizedDescription)")
+            print("Error saving transaction: \(error.localizedDescription)")
         }
     }
     
     func updateTransaction(transaction: Transaction, transactionName: String, amount: Int64, transactionType: String, dateTime: Timestamp, location: Location) {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
+            print("User not authenticated")
             return
         }
         
@@ -130,24 +212,23 @@ class TransactionViewModel: ObservableObject {
         do {
             try db.collection("users").document(userId).collection("accounts").document(transaction.accountId).collection("transactions").document(transaction.id ?? "").setData(from: updatedTransaction) { error in
                 if let error = error {
-                    print("Error al actualizar la transacción: \(error.localizedDescription)")
+                    print("Error updating transaction: \(error.localizedDescription)")
                 } else {
-                    print("Transacción actualizada exitosamente")
+                    print("Transaction updated successfully")
                     self.adjustAccountBalanceAfterEdit(oldTransaction: transaction, newTransaction: updatedTransaction)
                     self.getTransactionsForAllAccounts()
-                    
-                    // Llamada al endpoint después de actualizar la transacción
+                    self.cacheTransaction(updatedTransaction)
                     self.analyzeTransaction(userId: userId, transactionId: transaction.id ?? "")
                 }
             }
         } catch {
-            print("Error al actualizar la transacción: \(error.localizedDescription)")
+            print("Error updating transaction: \(error.localizedDescription)")
         }
     }
     
     func deleteTransaction(accountID: String, transactionID: String) {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
+            print("User not authenticated")
             return
         }
         
@@ -157,23 +238,39 @@ class TransactionViewModel: ObservableObject {
                 if let transaction = transaction {
                     self.db.collection("users").document(userId).collection("accounts").document(accountID).collection("transactions").document(transactionID).delete { error in
                         if let error = error {
-                            print("Error al eliminar la transacción: \(error.localizedDescription)")
+                            print("Error deleting transaction: \(error.localizedDescription)")
                         } else {
-                            print("Transacción eliminada exitosamente")
+                            print("Transaction deleted successfully")
                             self.reverseAccountBalance(accountID: accountID, amount: transaction.amount, transactionType: transaction.transactionType)
                             self.getTransactionsForAllAccounts()
+                            self.removeTransactionFromCache(transactionID: transactionID)
                         }
                     }
                 }
             } else {
-                print("Transacción no encontrada para eliminar")
+                print("Transaction not found for deletion")
             }
+        }
+    }
+    
+    private func removeTransactionFromCache(transactionID: String) {
+        let fetchRequest: NSFetchRequest<CachedTransaction> = CachedTransaction.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", transactionID)
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            for object in results {
+                context.delete(object)
+            }
+            try context.save()
+        } catch {
+            print("Error deleting transaction from cache: \(error.localizedDescription)")
         }
     }
     
     func getAccountName(accountID: String) {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("Usuario no autenticado")
+            print("User not authenticated")
             return
         }
         
@@ -183,12 +280,12 @@ class TransactionViewModel: ObservableObject {
         
         db.collection("users").document(userId).collection("accounts").document(accountID).getDocument { (document, error) in
             if let document = document, document.exists {
-                let accountName = document.data()?["name"] as? String ?? "Cuenta desconocida"
+                let accountName = document.data()?["name"] as? String ?? "Unknown account"
                 DispatchQueue.main.async {
                     self.accounts[accountID] = accountName
                 }
             } else {
-                print("Cuenta no encontrada para ID: \(accountID)")
+                print("Account not found for ID: \(accountID)")
             }
         }
     }
@@ -249,9 +346,9 @@ class TransactionViewModel: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
-                print("Error al llamar al endpoint de análisis: \(error.localizedDescription)")
+                print("Error calling analysis endpoint: \(error.localizedDescription)")
             } else {
-                print("Llamado al endpoint de análisis exitoso")
+                print("Analysis endpoint call successful")
             }
         }.resume()
     }

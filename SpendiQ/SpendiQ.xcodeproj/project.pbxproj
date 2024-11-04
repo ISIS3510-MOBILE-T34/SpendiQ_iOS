@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		273719902CAE51B500DD05DB /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 27D3DBB72CA5E56F005FCD91 /* FirebaseAnalytics */; };
 		273719F32CAE55D400DD05DB /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 273719F22CAE55D400DD05DB /* FirebaseAuth */; };
+		277B1F312CD938040052578D /* CachedTransaction+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B1F302CD938040052578D /* CachedTransaction+CoreDataProperties.swift */; };
+		277B1F322CD938040052578D /* CachedTransaction+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B1F2F2CD938040052578D /* CachedTransaction+CoreDataClass.swift */; };
 		27FF2E4C2CAE57E600A7ACB8 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4B2CAE57E600A7ACB8 /* FirebaseCore */; };
 		27FF2E4E2CAE57E600A7ACB8 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4D2CAE57E600A7ACB8 /* FirebaseFirestore */; };
 		27FF2E502CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 27FF2E4F2CAE57E600A7ACB8 /* FirebaseFirestoreCombine-Community */; };
@@ -47,6 +49,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		277B1F2F2CD938040052578D /* CachedTransaction+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CachedTransaction+CoreDataClass.swift"; sourceTree = "<group>"; };
+		277B1F302CD938040052578D /* CachedTransaction+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CachedTransaction+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		27D3DB852CA5E4BB005FCD91 /* SpendiQ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpendiQ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27D3DB952CA5E4BD005FCD91 /* SpendiQTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendiQTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27D3DB9F2CA5E4BD005FCD91 /* SpendiQUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpendiQUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,6 +142,8 @@
 		27D3DB7C2CA5E4BB005FCD91 = {
 			isa = PBXGroup;
 			children = (
+				277B1F2F2CD938040052578D /* CachedTransaction+CoreDataClass.swift */,
+				277B1F302CD938040052578D /* CachedTransaction+CoreDataProperties.swift */,
 				27D3DB872CA5E4BB005FCD91 /* SpendiQ */,
 				27D3DB982CA5E4BD005FCD91 /* SpendiQTests */,
 				27D3DBA22CA5E4BD005FCD91 /* SpendiQUITests */,
@@ -321,6 +327,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				277B1F312CD938040052578D /* CachedTransaction+CoreDataProperties.swift in Sources */,
+				277B1F322CD938040052578D /* CachedTransaction+CoreDataClass.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
