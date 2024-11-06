@@ -1,6 +1,6 @@
 # Aclaración Importante
 
-Alonso Hernandez Tavera con usuario de github: fai-aher, utilizò el computador de Julián Mora y el de Gabriel Guevara para trabajar durante la implementación de la app, debido a que no tiene un computador Mac propio. Por esa razón, algunos commit aparecen con sus usuario y nombre.
+Alonso Hernandez Tavera con usuario de github: fai-aher, utilizò el computador de Julián Mora (julian27m) y el de Gabriel Guevara (gguevarab) para trabajar durante la implementación de la app, debido a que no tiene un computador Mac propio. Por esa razón, algunos commit aparecen con sus usuario y nombre.
 
 # SpendiQ_iOS
 This repository hold the development process of the iOS mobile app version of SpendiQ
