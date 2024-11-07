@@ -6,175 +6,191 @@
 //
 
 import SwiftUI
-
 struct SignUpView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = AuthenticationViewModel()
+    
+    // MARK: - State Variables
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var agreeToTerms = false
     @State private var showTermsAndConditions = false
     @State private var birthDate = Date()
-    @State private var showSMSVerificationView = false  // Correct property
-
+    @State private var showSMSVerificationView = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
+    
+    // MARK: - Formatters
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
         return formatter
     }()
-
+    
     private let birthDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/M/yyyy"
         return formatter
     }()
-
-    var body: some View {
-        ZStack {
-            Color(hex: "FFFFFF").edgesIgnoringSafeArea(.all)
-
-            // Background rhombuses
-            GeometryReader { geometry in
-                Path { path in
-                    let width = geometry.size.width
-                    let height = geometry.size.height
-
-                    path.move(to: CGPoint(x: -width * 0.7, y: height * 1.6))
-                    path.addLine(to: CGPoint(x: width * 0.5, y: height * 0.9))
-                    path.addLine(to: CGPoint(x: width * 0.0, y: height * 0.6))
-                    path.addLine(to: CGPoint(x: -width * 1.0, y: height * 1.9))
-                    path.closeSubpath()
-                }
-                .stroke(Color(hex: "C33BA5"), lineWidth: 5)
-
-                Path { path in
-                    let width = geometry.size.width
-                    let height = geometry.size.height
-
-                    path.move(to: CGPoint(x: width * 4.0, y: height * 0.7))
-                    path.addLine(to: CGPoint(x: width * 1.4, y: height * 0.0))
-                    path.addLine(to: CGPoint(x: width * 1.1, y: -height * 0.3))
-                    path.addLine(to: CGPoint(x: width * 0.75, y: height * 0.13))
-                    path.closeSubpath()
-                }
-                .stroke(Color(hex: "B3CB54"), lineWidth: 5)
+    
+    // MARK: - Computed Properties
+    private var isFormValid: Bool {
+        !firstName.isEmpty &&
+        !lastName.isEmpty &&
+        !viewModel.phoneNumber.isEmpty &&
+        !viewModel.email.isEmpty &&
+        !viewModel.password.isEmpty &&
+        agreeToTerms &&
+        viewModel.validateAge(birthDate: birthDate)
+    }
+    
+    // MARK: - View Components
+    private func formField(title: String, text: Binding<String>, placeholder: String, keyboardType: UIKeyboardType = .default, isSecure: Bool = false, maxLength: Int) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.custom("SFProText-Regular", size: 18))
+            if isSecure {
+                SecureField(placeholder, text: text)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onChange(of: text.wrappedValue) { newValue in
+                        if newValue.count > maxLength {
+                            text.wrappedValue = String(newValue.prefix(maxLength))
+                        }
+                    }
+            } else {
+                TextField(placeholder, text: text)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(keyboardType)
+                    .autocapitalization(keyboardType == .emailAddress ? .none : .words)
+                    .onChange(of: text.wrappedValue) { newValue in
+                        if newValue.count > maxLength {
+                            text.wrappedValue = String(newValue.prefix(maxLength))
+                        }
+                    }
             }
-
-            VStack(alignment: .leading, spacing: 25) {
+        }
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header
                 HStack {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
                         Image(systemName: "chevron.left")
                             .foregroundColor(Color(hex: "65558F"))
                     }
                     Text("Create Free Account")
                         .font(.custom("SFProDisplay-Bold", size: 32))
                         .fontWeight(.bold)
+                    Spacer()
                 }
-                .padding(.top, 50)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("First Name")
-                        .font(.custom("SFProText-Regular", size: 18))
-                    TextField("Enter your first name...", text: $firstName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .foregroundColor(Color(hex: "65558F"))
+                .padding(.top, 20)
+                
+                // Form Fields
+                Group {
+                    formField(title: "First Name",
+                             text: $firstName,
+                             placeholder: "Enter your first name...",
+                             maxLength: AuthenticationViewModel.ValidationLimits.maxNameLength)
+                    
+                    formField(title: "Last Name",
+                             text: $lastName,
+                             placeholder: "Enter your last name...",
+                             maxLength: AuthenticationViewModel.ValidationLimits.maxNameLength)
+                    
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Phone Number")
+                            .font(.custom("SFProText-Regular", size: 18))
+                        Text("Format: Country Code + Number (e.g., 573118977713)")
+                            .font(.custom("SFProText-Regular", size: 14))
+                            .foregroundColor(.gray)
+                        formField(title: "",
+                                text: $viewModel.phoneNumber,
+                                placeholder: "Enter your phone number...",
+                                keyboardType: .phonePad,
+                                maxLength: AuthenticationViewModel.ValidationLimits.maxPhoneLength)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Birth Date")
+                            .font(.custom("SFProText-Regular", size: 18))
+                        DatePicker("", selection: $birthDate,
+                                 in: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Calendar.current.date(byAdding: .year, value: -18, to: Date())!,
+                                 displayedComponents: .date)
+                            .datePickerStyle(DefaultDatePickerStyle())
+                            .onChange(of: birthDate) { newValue in
+                                viewModel.birthDate = birthDateFormatter.string(from: newValue)
+                            }
+                    }
+                    
+                    formField(title: "Email Address",
+                             text: $viewModel.email,
+                             placeholder: "you@example.com",
+                             keyboardType: .emailAddress,
+                             maxLength: AuthenticationViewModel.ValidationLimits.maxEmailLength)
+                    
+                    formField(title: "Create Password",
+                             text: $viewModel.password,
+                             placeholder: "Create a secure password...",
+                             isSecure: true,
+                             maxLength: AuthenticationViewModel.ValidationLimits.maxPasswordLength)
                 }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Last Name")
-                        .font(.custom("SFProText-Regular", size: 18))
-                    TextField("Enter your last name...", text: $lastName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .foregroundColor(Color(hex: "65558F"))
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Phone Number")
-                        .font(.custom("SFProText-Regular", size: 18))
-                    Text("- Country Code + number")
-                        .font(.custom("SFProText-Regular", size: 14))
-                    Text("- Example: 573118977713")
-                        .font(.custom("SFProText-Regular", size: 14))
-                    TextField("Enter your phone number...", text: $viewModel.phoneNumber)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.phonePad)
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Birth Date")
-                        .font(.custom("SFProText-Regular", size: 18))
-                    DatePicker("", selection: $birthDate, displayedComponents: .date)
-                        .datePickerStyle(DefaultDatePickerStyle())
-                        .onChange(of: birthDate) { newValue in
-                            viewModel.birthDate = birthDateFormatter.string(from: newValue)
-                        }
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Email Address")
-                        .font(.custom("SFProText-Regular", size: 18))
-                    TextField("you@example.com", text: $viewModel.email)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .foregroundColor(Color(hex: "65558F"))
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Create Password")
-                        .font(.custom("SFProText-Regular", size: 18))
-                    SecureField("Create a secure password...", text: $viewModel.password)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-
+                
+                // Terms and Conditions
                 HStack {
                     Toggle("", isOn: $agreeToTerms)
                         .labelsHidden()
                     Text("I agree with the")
                         .font(.custom("SFProText-Regular", size: 18))
-                    Button(action: {
-                        showTermsAndConditions = true
-                    }) {
+                    Button(action: { showTermsAndConditions = true }) {
                         Text("Terms & Conditions")
                             .foregroundColor(Color(hex: "C33BA5"))
                             .font(.custom("SFProText-Regular", size: 15))
                     }
                 }
-
+                
+                // Sign Up Button
                 Button(action: {
-                    if agreeToTerms {
-                        viewModel.fullName = firstName + " " + lastName
-                        viewModel.birthDate = birthDateFormatter.string(from: birthDate)
-                        viewModel.signUp(appState: appState)
-                        self.showSMSVerificationView = true  // Corrected line
-                    } else {
-                        viewModel.errorMessage = "Please agree to the Terms & Conditions"
+                    if let validationError = viewModel.validateInputs(firstName: firstName, lastName: lastName) {
+                        errorMessage = validationError
+                        showErrorAlert = true
+                        return
                     }
+                    
+                    if !viewModel.validateAge(birthDate: birthDate) {
+                        errorMessage = "You must be between \(AuthenticationViewModel.ValidationLimits.minAge) and \(AuthenticationViewModel.ValidationLimits.maxAge) years old"
+                        showErrorAlert = true
+                        return
+                    }
+                    
+                    viewModel.fullName = "\(firstName.trimmingCharacters(in: .whitespaces)) \(lastName.trimmingCharacters(in: .whitespaces))"
+                    viewModel.birthDate = birthDateFormatter.string(from: birthDate)
+                    viewModel.signUp(appState: appState)
+                    showSMSVerificationView = true
                 }) {
                     Text("Sign Up")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color(hex: "65558F"))
+                        .background(isFormValid ? Color(hex: "65558F") : Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                         .font(.custom("SFProText-Regular", size: 18))
                 }
+                .disabled(!isFormValid)
                 .padding(.top, 20)
-
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .font(.custom("SFProText-Regular", size: 14))
-                }
-
-                Spacer()
             }
             .padding(.horizontal, 40)
         }
         .navigationBarHidden(true)
+        .alert(isPresented: $showErrorAlert) {
+            Alert(
+                title: Text("Error"),
+                message: Text(errorMessage),
+                dismissButton: .default(Text("OK"))
+            )
+        }
         .sheet(isPresented: $showTermsAndConditions) {
             TermsAndConditionsView()
         }

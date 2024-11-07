@@ -2,7 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>&quot;We use Face ID to securely log you into your account.&quot;</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>"We use notifications to alert you of offers near you."</string>
+	<string>&quot;We use notifications to alert you of offers near you.&quot;</string>
 </dict>
 </plist>

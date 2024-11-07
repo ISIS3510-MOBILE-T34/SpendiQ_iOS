@@ -12,10 +12,13 @@ struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = AuthenticationViewModel()
-    @State private var rememberMe = false
     @State private var showForgotPassword = false
     @State private var showPrivacy = false
     @State private var showHelp = false
+    @State private var canUseBiometrics = false
+    @State private var hasSavedCredentials = false
+    @State private var showFaceIDError = false
+    @State private var faceIDErrorMessage = "Face ID functionality is currently unavailable. Please log in with your email and password."
     
     var body: some View {
         NavigationStack {
@@ -61,6 +64,7 @@ struct LoginView: View {
                         Spacer()
                     }
                     .padding(.top, 50)
+                    
                     Text("SpendiQ")
                         .font(.custom("SFProDisplay-Bold", size: 64))
                         .fontWeight(.bold)
@@ -86,7 +90,7 @@ struct LoginView: View {
                     }
                     
                     HStack {
-                        Toggle("", isOn: $rememberMe)
+                        Toggle("", isOn: $viewModel.rememberMe)
                             .labelsHidden()
                         Text("Remember me")
                             .font(.custom("SFProText-Regular", size: 14))
@@ -105,23 +109,26 @@ struct LoginView: View {
                     }
                     .padding(.top, 20)
                     
-                    // Botón de Face ID
-                    Button(action: {
-                        authenticateWithFaceID()
-                    }) {
-                        HStack {
-                            Image(systemName: "faceid")
-                                .foregroundColor(.white)
-                            Text("Log in with Face ID")
-                                .foregroundColor(.white)
+                    Group {
+                        if canUseBiometrics && hasSavedCredentials && !appState.isFirstLogin {
+                            Button(action: {
+                                showFaceIDError = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "faceid")
+                                        .foregroundColor(.white)
+                                    Text("Log in with Face ID")
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color(hex: "65558F"))
+                                .cornerRadius(10)
+                                .font(.custom("SFProText-Regular", size: 18))
+                            }
+                            .padding(.top, 10)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(hex: "65558F"))
-                        .cornerRadius(10)
-                        .font(.custom("SFProText-Regular", size: 18))
                     }
-                    .padding(.top, 10)
                     
                     Button(action: {
                         showForgotPassword = true
@@ -171,28 +178,46 @@ struct LoginView: View {
             .sheet(isPresented: $showHelp) {
                 HelpView()
             }
+            .alert("Face ID", isPresented: $showFaceIDError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(faceIDErrorMessage)
+            }
+            .onAppear {
+                // Solo verificamos biométricos si no es el primer login
+                if !appState.isFirstLogin {
+                    checkBiometricAvailability()
+                    checkSavedCredentials()
+                }
+            }
         }
     }
     
-    private func authenticateWithFaceID() {
+    private func checkBiometricAvailability() {
+        print("Checking biometric availability")
         let context = LAContext()
         var error: NSError?
         
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            let reason = "Log in to your account"
-            
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-                DispatchQueue.main.async {
-                    if success {
-                        viewModel.loginWithFaceID(appState: appState)
-                    } else {
-                        viewModel.errorMessage = "Face ID authentication failed"
-                    }
-                }
+        DispatchQueue.main.async {
+            canUseBiometrics = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+            print("Face ID available: \(canUseBiometrics)")
+            if let error = error {
+                print("Face ID error: \(error.localizedDescription)")
+                canUseBiometrics = false
             }
-        } else {
-            viewModel.errorMessage = "Face ID is not available on this device"
         }
+    }
+    
+    private func checkSavedCredentials() {
+        print("Checking for saved credentials")
+        let facade = BiometricAuthenticationFacade()
+        facade.hasSavedCredentials()
+            .receive(on: DispatchQueue.main)
+            .sink { hasCredentials in
+                print("Has saved credentials check result: \(hasCredentials)")
+                self.hasSavedCredentials = hasCredentials
+            }
+            .store(in: &viewModel.cancellables)
     }
 }
 
