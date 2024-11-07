@@ -1,46 +1,30 @@
-// MovementForm.swift
-
 import SwiftUI
-
-struct MovementForm: View {
-    @ObservedObject var bankAccountViewModel: BankAccountViewModel
-
-    var body: some View {
-        EditTransactionForm(
-            bankAccountViewModel: bankAccountViewModel,
-            transactionViewModel: TransactionViewModel(),
-            transaction: nil
-        )
-    }
-}
-
-// EditTransactionForm.swift
-
 
 struct EditTransactionForm: View {
     @Environment(\.dismiss) var dismiss
     @State private var transactionType: String = "Expense"
     @State private var transactionName: String = ""
-    @State private var amount: Float = 0.0
+    @State private var amountText: String = ""
     @State private var selectedAccountID: String = ""
-    @State private var selectedTargetAccountID: String = ""
     @State private var selectedEmoji: String = ""
     @State private var selectedDateTime: Date = Date()
     @FocusState private var isEmojiFieldFocused: Bool
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
     @ObservedObject var transactionViewModel: TransactionViewModel
-    var transaction: Transaction?
+    var transactionItem: Transaction?
     
-    let transactionTypes = ["Expense", "Income", "Transaction"]
+    // Only "Expense" and "Income" types
+    let transactionTypes = ["Expense", "Income"]
     
     var body: some View {
         NavigationView {
             VStack(alignment: .center, spacing: 20) {
-                Text(transaction != nil ? "Edit Transaction" : "New Transaction")
+                Text(transactionItem != nil ? "Edit Transaction" : "New Transaction")
                     .font(.title2)
                     .fontWeight(.bold)
                     .padding(.top, 20)
                 
+                // Picker for transaction type
                 Picker("Select Type", selection: $transactionType) {
                     ForEach(transactionTypes, id: \.self) { type in
                         Text(type).tag(type)
@@ -48,7 +32,7 @@ struct EditTransactionForm: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal, 20)
-                .onChange(of: transactionType) { _, newValue in
+                .onChange(of: transactionType) { newValue in
                     selectedEmoji = selectEmoji(for: newValue)
                 }
                 
@@ -60,29 +44,46 @@ struct EditTransactionForm: View {
                         Text(selectedEmoji.isEmpty ? "🙂" : selectedEmoji)
                             .font(.system(size: 58))
                     }
-                    
-                    Button("Change icon") {
-                        isEmojiFieldFocused = true
-                    }
-                    .foregroundColor(.blue)
                 }
                 
+                // Form fields
                 Form {
+                    // Transaction name field with alphanumeric validation
                     Section(header: Text("Transaction name")) {
                         TextField("Transaction name", text: $transactionName)
                             .frame(height: 32)
-                    }
-                    
-                    Section(header: Text("Amount")) {
-                        TextField("Amount", value: $amount, format: .number)
-                            .keyboardType(.decimalPad)
-                            .onChange(of: amount) { oldValue, newValue in
-                                if newValue < 0 {
-                                    amount = 0.0
+                            .onChange(of: transactionName) { newValue in
+                                let filtered = newValue.filter { $0.isLetter || $0.isNumber || $0 == " " }
+                                if filtered != newValue {
+                                    self.transactionName = filtered
+                                }
+                                // Limit to 50 characters
+                                if transactionName.count > 50 {
+                                    transactionName = String(transactionName.prefix(50))
                                 }
                             }
                     }
                     
+                    // Amount field with numeric validation and max length
+                    Section(header: Text("Amount")) {
+                        TextField("Amount", text: $amountText)
+                            .keyboardType(.decimalPad)
+                            .onChange(of: amountText) { newValue in
+                                // Allow only numbers and decimal point
+                                let filtered = newValue.filter { "0123456789.".contains($0) }
+                                if filtered != newValue {
+                                    self.amountText = filtered
+                                }
+                                // Limit to 10 digits
+                                let digits = amountText.filter { "0123456789".contains($0) }
+                                if digits.count > 10 {
+                                    let extraDigits = digits.count - 10
+                                    amountText = String(amountText.dropLast(extraDigits))
+                                }
+                            }
+                    }
+                    
+                    // Account selection
                     Section(header: Text("Select Account")) {
                         Picker("Account", selection: $selectedAccountID) {
                             ForEach(bankAccountViewModel.accounts) { account in
@@ -93,29 +94,14 @@ struct EditTransactionForm: View {
                         .onAppear {
                             bankAccountViewModel.getBankAccounts()
                         }
-                        .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
+                        .onChange(of: bankAccountViewModel.accounts) { newAccounts in
                             if !newAccounts.isEmpty, selectedAccountID.isEmpty {
                                 selectedAccountID = newAccounts.first?.id ?? ""
                             }
                         }
                     }
                     
-                    if transactionType == "Transaction" {
-                        Section(header: Text("Target Account")) {
-                            Picker("Target Account", selection: $selectedTargetAccountID) {
-                                ForEach(bankAccountViewModel.accounts) { account in
-                                    Text(account.name).tag(account.id ?? "")
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            .onChange(of: bankAccountViewModel.accounts) { _, newAccounts in
-                                if !newAccounts.isEmpty, selectedTargetAccountID.isEmpty {
-                                    selectedTargetAccountID = newAccounts.first?.id ?? ""
-                                }
-                            }
-                        }
-                    }
-                    
+                    // Date and time pickers
                     Section(header: Text("Date")) {
                         DatePicker("Select Date", selection: $selectedDateTime, displayedComponents: .date)
                             .datePickerStyle(CompactDatePickerStyle())
@@ -127,45 +113,53 @@ struct EditTransactionForm: View {
                     }
                 }
                 .background(Color.clear)
+                .onTapGesture {
+                    hideKeyboard()
+                }
                 
+                // Action buttons
                 HStack {
+                    // Submit button with validation
                     Button(action: {
-                        if let transaction = transaction {
+                        guard let amount = Float(amountText) else { return }
+                        let location = Location(latitude: 0.0, longitude: 0.0)
+                        if let transactionItem = transactionItem {
                             transactionViewModel.updateTransaction(
-                                transaction: transaction,
+                                accountID: selectedAccountID,
+                                transaction: transactionItem,
                                 transactionName: transactionName,
                                 amount: amount,
-                                fromAccountID: selectedAccountID,
-                                toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
                                 transactionType: transactionType,
-                                dateTime: selectedDateTime
+                                dateTime: selectedDateTime,
+                                location: location
                             )
                         } else {
                             transactionViewModel.addTransaction(
                                 accountID: selectedAccountID,
                                 transactionName: transactionName,
                                 amount: amount,
-                                fromAccountID: selectedAccountID,
-                                toAccountID: transactionType == "Transaction" ? selectedTargetAccountID : nil,
                                 transactionType: transactionType,
-                                dateTime: selectedDateTime
+                                dateTime: selectedDateTime,
+                                location: location
                             )
                         }
                         dismiss()
                     }) {
-                        Text(transaction != nil ? "Save" : "Accept")
+                        Text(transactionItem != nil ? "Save" : "Accept")
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.blue)
+                            .background(isFormValid() ? Color.blue : Color.gray)
                             .foregroundColor(.white)
                             .cornerRadius(8)
                     }
+                    .disabled(!isFormValid())
                     
-                    if transaction != nil {
+                    // Delete button for editing mode
+                    if transactionItem != nil {
                         Button(action: {
                             transactionViewModel.deleteTransaction(
                                 accountID: selectedAccountID,
-                                transactionID: transaction!.id!
+                                transactionID: transactionItem!.id!
                             )
                             dismiss()
                         }) {
@@ -178,6 +172,7 @@ struct EditTransactionForm: View {
                         }
                     }
                     
+                    // Cancel button
                     Button(action: {
                         dismiss()
                     }) {
@@ -192,16 +187,19 @@ struct EditTransactionForm: View {
                 .padding(.horizontal)
                 .padding(.bottom, 20)
             }
+            .onTapGesture {
+                hideKeyboard()
+            }
             .navigationBarHidden(true)
             .onAppear {
-                if let transaction = transaction {
-                    transactionType = transaction.transactionType
-                    transactionName = transaction.transactionName
-                    amount = transaction.amount
-                    selectedAccountID = transaction.fromAccountID
-                    selectedTargetAccountID = transaction.toAccountID ?? ""
-                    selectedDateTime = transaction.dateTime
-                    selectedEmoji = selectEmoji(for: transaction.transactionType)
+                // Initialize form fields for editing
+                if let transactionItem = transactionItem {
+                    transactionType = transactionItem.transactionType
+                    transactionName = transactionItem.transactionName
+                    amountText = String(format: "%.2f", transactionItem.amount)
+                    selectedAccountID = transactionItem.accountID
+                    selectedDateTime = transactionItem.dateTime
+                    selectedEmoji = selectEmoji(for: transactionType)
                 } else {
                     selectedEmoji = selectEmoji(for: transactionType)
                 }
@@ -209,16 +207,31 @@ struct EditTransactionForm: View {
         }
     }
     
+    // Form validation function
+    func isFormValid() -> Bool {
+        if transactionName.isEmpty || amountText.isEmpty || selectedAccountID.isEmpty {
+            return false
+        }
+        if Float(amountText) == nil || Float(amountText)! <= 0 {
+            return false
+        }
+        return true
+    }
+    
+    // Function to select emoji based on transaction type
     func selectEmoji(for transactionType: String) -> String {
         switch transactionType {
         case "Expense":
             return "💰"
         case "Income":
             return "🍾"
-        case "Transaction":
-            return "🔄"
         default:
             return "❓"
         }
+    }
+    
+    // Function to dismiss the keyboard
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }

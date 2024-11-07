@@ -5,7 +5,6 @@ import FirebaseAuth
 
 struct HomePage: View {
     @EnvironmentObject var appState: AppState
-    @State private var currentIndex: Int = 0
     @State private var CurrentBalance: Int = 0
     @ObservedObject private var viewModel = TransactionViewModel()
     @ObservedObject private var bankAccountViewModel = BankAccountViewModel()
@@ -34,7 +33,7 @@ struct HomePage: View {
                     .foregroundColor(.primarySpendiq)
                     .fontWeight(.bold)
                 
-                GraphBox(currentIndex: $currentIndex)
+                GraphBox()
                     .frame(height: 264)
                     .padding(.bottom,12)
                 

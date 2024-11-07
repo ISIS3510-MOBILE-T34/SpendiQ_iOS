@@ -2,64 +2,25 @@ import SwiftUI
 import Charts
 
 struct GraphBox: View {
-    @Binding var currentIndex: Int
     @State private var selectedTimeFrame: String = "1 Day"
+    @ObservedObject var balanceViewModel = BalanceViewModel()
     
-    let dayData = [20, 40, 30, 50, 60, 70, 55]
-    let monthData = [100, 80, 120, 110, 150, 140, 180]
-    let yearData = [200, 300, 250, 400, 380, 500, 450]
-    let maxData = [500, 600, 550, 700, 750, 800, 850]
-    
-    let views = [
-        Color.white,
-        Color.white
-    ]
-    
-    let timeFrames = ["1 Day", "1 Month", "1 Year", "Max"]
+    let timeFrames = ["1 Day", "Max"]
     
     var body: some View {
         VStack {
-            GeometryReader { geometry in
-                HStack(spacing: 25) {
-                    ForEach(0..<views.count, id: \.self) { index in
-                        VStack {
-        
-                            if selectedTimeFrame == "1 Day" {
-                                chartView(data: dayData)
-                            } else if selectedTimeFrame == "1 Month" {
-                                chartView(data: monthData)
-                            } else if selectedTimeFrame == "1 Year" {
-                                chartView(data: yearData)
-                            } else if selectedTimeFrame == "Max" {
-                                chartView(data: maxData)
-                            }
-                        }
-                        .frame(width: 375, height: 264)
-                        .cornerRadius(10)
-                        .shadow(radius: 10)
-                    }
-                }
-                .padding(.horizontal, (geometry.size.width - 375) / 2)
-                .offset(x: -CGFloat(currentIndex) * (375 + 10))
-                .gesture(
-                    DragGesture()
-                        .onEnded { value in
-                            let dragThreshold: CGFloat = 50
-                            withAnimation(.easeInOut) {
-                                if value.translation.width < -dragThreshold {
-                                    currentIndex = min(currentIndex + 1, views.count - 1)
-                                } else if value.translation.width > dragThreshold {
-                                    currentIndex = max(currentIndex - 1, 0)
-                                }
-                            }
-                        }
-                )
-            }
+            // Chart View
+            chartView()
+                .frame(height: 200)
+                .padding(.horizontal)
+            
+            // Time Frame Picker
             HStack(spacing: 20) {
                 ForEach(timeFrames, id: \.self) { frame in
                     Button(action: {
                         withAnimation {
                             selectedTimeFrame = frame
+                            balanceViewModel.fetchBalanceData(timeFrame: selectedTimeFrame)
                         }
                     }) {
                         Text(frame)
@@ -73,36 +34,62 @@ struct GraphBox: View {
                     }
                 }
             }
-            .frame(width: 380, height: 48)
+            .frame(height: 48)
             .background(Color.gray.opacity(0.1))
             .cornerRadius(14)
+            .padding(.horizontal)
+        }
+        .onAppear {
+            balanceViewModel.fetchBalanceData(timeFrame: selectedTimeFrame)
         }
     }
     
     @ViewBuilder
-    func chartView(data: [Int]) -> some View {
-        Chart {
-            ForEach(Array(data.enumerated()), id: \.offset) { index, value in
-                // Gráfico de área
-                AreaMark(
-                    x: .value("Day", index),
-                    y: .value("Value", value)
-                )
-                .foregroundStyle(Color.primarySpendiq.opacity(0.2))
-                LineMark(
-                    x: .value("Day", index),
-                    y: .value("Value", value)
-                )
-                .foregroundStyle(Color.primarySpendiq.opacity(0.5))
-                .lineStyle(StrokeStyle(lineWidth: 2))
+    func chartView() -> some View {
+        if balanceViewModel.balanceData.isEmpty {
+            Text("No data available")
+                .foregroundColor(.gray)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Chart {
+                ForEach(balanceViewModel.balanceData, id: \.date) { dataPoint in
+                    LineMark(
+                        x: .value("Date", dataPoint.date),
+                        y: .value("Balance", dataPoint.balance)
+                    )
+                    .foregroundStyle(Color.blue.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                }
             }
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(formatDate(for: selectedTimeFrame, date: date))
+                        }
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading)
+            }
+            .padding(.bottom, 30)
         }
-        .frame(width: 370, height: 180)
-        .cornerRadius(10)
-        .padding(.bottom,30)
     }
-}
-
-#Preview {
-    GraphBox(currentIndex: .constant(0))
+    
+    // Function to format dates based on time frame
+    private func formatDate(for timeFrame: String, date: Date) -> String {
+        let formatter = DateFormatter()
+        switch timeFrame {
+        case "1 Day":
+            formatter.dateFormat = "HH:mm"
+        case "Max":
+            formatter.dateFormat = "MMM dd, yyyy"
+        default:
+            formatter.dateFormat = "MMM dd"
+        }
+        return formatter.string(from: date)
+    }
 }

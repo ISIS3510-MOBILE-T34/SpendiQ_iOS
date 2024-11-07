@@ -26,8 +26,9 @@ struct ContentView: View {
                             NotificationManager.shared.requestNotificationPermission()
                         }
                 case "Promos":
-                    // Pass the shared LocationManager to PromosPage
-                    PromosPage(locationManager: locationManager)
+                    EmptyView()
+ // COMENTADO                    // Pass the shared LocationManager to PromosPage
+//                    PromosPage(locationManager: locationManager)
                 case "Accounts":
                     AccountsPage()
                 case "Profile":
@@ -49,16 +50,16 @@ struct ContentView: View {
                 }
             })
             // Hidden NavigationLink for navigation when notification is tapped
-            .background(
-                NavigationLink(
-                    destination: PromosPage(locationManager: locationManager),
-                    isActive: $showOffersList,
-                    label: {
-                        EmptyView()
-                    }
-                )
-                .hidden()
-            )
+//       COMENTADO      .background(
+//                NavigationLink(
+//                    destination: PromosPage(locationManager: locationManager),
+//                    isActive: $showOffersList,
+//                    label: {
+//                        EmptyView()
+//                    }
+//                )
+//                .hidden()
+//            )
             // Listen for the "ShowOffersList" notification to navigate to PromosPage
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowOffersList"))) { _ in
                 self.showOffersList = true

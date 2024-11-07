@@ -27,108 +27,111 @@ struct OfferDetailView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // SPECIAL OFFERS Title
-                Text("Special Offers Near You")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .padding(.top, 15)
-                    .padding(.bottom, 15)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                
-                HStack {
-                    // Shop Image with only ProgressView as placeholder
-                    AsyncImage(url: URL(string: offer.shopImage)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .frame(width: 80, height: 80)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        case .failure(_):
-                            Image(systemName: "photo")
-                                .resizable()
-                                .frame(width: 80, height: 80)
-                                .foregroundColor(.gray)
-                                .background(Color.gray.opacity(0.3))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        case .empty:
-                            ProgressView()
-                                .frame(width: 80, height: 80)
-                        @unknown default:
-                            EmptyView()
-                        }
-                    }
-                    
-                    // Shop Name and Distance
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(offer.placeName)
-                            .font(.headline)
-                        
-                        Text(displayDistance(offer.distance))
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        Text(offer.offerDescription)
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.orange)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .padding(.leading, 10)
-                }
-                .padding(.bottom, 10)
-                
-                // Map with Markers
-                Map(coordinateRegion: $region, annotationItems: annotationItems) { annotation in
-                    MapAnnotation(coordinate: annotation.coordinate) {
-                        // Customize the annotation view based on the annotation type
-                        if annotation.annotationType == .shop {
-                            // Shop annotation
-                            Image(systemName: "mappin.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.title)
-                        } else if annotation.annotationType == .user {
-                            // User annotation
-                            Image(systemName: "location.circle.fill")
-                                .foregroundColor(.blue)
-                                .font(.title)
-                        }
-                    }
-                }
-                .frame(height: 300)
-                .cornerRadius(15)
-                .padding(.bottom, 20)
-                .onAppear {
-                    if let userLocation = locationManager.location {
-                        addUserAnnotation(userLocation.coordinate)
-                        updateRegion()
-                    }
-                }
-                .onReceive(locationManager.$location) { userLocation in
-                    if let userLocation = userLocation {
-                        addUserAnnotation(userLocation.coordinate)
-                        updateRegion()
-                    }
-                }
-                
-                // Sales Description
-                Text("Sales")
-                    .font(.headline)
-                    .padding(.bottom, 5)
-                
-                Text(offer.offerDescription)
-                    .padding(.bottom, 10)
-                
-                // Recommendation Reason
-                Text("This Sale is special for you: \(offer.recommendationReason)")
-                    .font(.caption)
-                    .foregroundColor(.blue)
-            }
-            .padding(.horizontal)
+        VStack { // Quitar esto
+            
         }
-        .navigationBarTitle("Offer Details", displayMode: .inline)
+//        ScrollView {
+//            VStack(alignment: .leading, spacing: 20) {
+//                // SPECIAL OFFERS Title
+//                Text("Special Offers Near You")
+//                    .font(.title)
+//                    .fontWeight(.bold)
+//                    .padding(.top, 15)
+//                    .padding(.bottom, 15)
+//                    .frame(maxWidth: .infinity, alignment: .center)
+//                
+//                HStack {
+//                    // Shop Image with only ProgressView as placeholder
+//                    AsyncImage(url: URL(string: offer.shopImage)) { phase in
+//                        switch phase {
+//                        case .success(let image):
+//                            image
+//                                .resizable()
+//                                .frame(width: 80, height: 80)
+//                                .clipShape(RoundedRectangle(cornerRadius: 8))
+//                        case .failure(_):
+//                            Image(systemName: "photo")
+//                                .resizable()
+//                                .frame(width: 80, height: 80)
+//                                .foregroundColor(.gray)
+//                                .background(Color.gray.opacity(0.3))
+//                                .clipShape(RoundedRectangle(cornerRadius: 8))
+//                        case .empty:
+//                            ProgressView()
+//                                .frame(width: 80, height: 80)
+//                        @unknown default:
+//                            EmptyView()
+//                        }
+//                    }
+//                    
+//                    // Shop Name and Distance
+//                    VStack(alignment: .leading, spacing: 4) {
+//                        Text(offer.placeName)
+//                            .font(.headline)
+//                        
+//                        Text(displayDistance(offer.distance))
+//                            .font(.subheadline)
+//                            .foregroundColor(.gray)
+//                        
+//                        Text(offer.offerDescription)
+//                            .font(.title3)
+//                            .fontWeight(.bold)
+//                            .foregroundColor(.orange)
+//                            .multilineTextAlignment(.leading)
+//                    }
+//                    .padding(.leading, 10)
+//                }
+//                .padding(.bottom, 10)
+//                
+//                // Map with Markers
+//                Map(coordinateRegion: $region, annotationItems: annotationItems) { annotation in
+//                    MapAnnotation(coordinate: annotation.coordinate) {
+//                        // Customize the annotation view based on the annotation type
+//                        if annotation.annotationType == .shop {
+//                            // Shop annotation
+//                            Image(systemName: "mappin.circle.fill")
+//                                .foregroundColor(.red)
+//                                .font(.title)
+//                        } else if annotation.annotationType == .user {
+//                            // User annotation
+//                            Image(systemName: "location.circle.fill")
+//                                .foregroundColor(.blue)
+//                                .font(.title)
+//                        }
+//                    }
+//                }
+//                .frame(height: 300)
+//                .cornerRadius(15)
+//                .padding(.bottom, 20)
+//                .onAppear {
+//                    if let userLocation = locationManager.location {
+//                        addUserAnnotation(userLocation.coordinate)
+//                        updateRegion()
+//                    }
+//                }
+//                .onReceive(locationManager.$location) { userLocation in
+//                    if let userLocation = userLocation {
+//                        addUserAnnotation(userLocation.coordinate)
+//                        updateRegion()
+//                    }
+//                }
+//                
+//                // Sales Description
+//                Text("Sales")
+//                    .font(.headline)
+//                    .padding(.bottom, 5)
+//                
+//                Text(offer.offerDescription)
+//                    .padding(.bottom, 10)
+//                
+//                // Recommendation Reason
+//                Text("This Sale is special for you: \(offer.recommendationReason)")
+//                    .font(.caption)
+//                    .foregroundColor(.blue)
+//            }
+//            .padding(.horizontal)
+//        }
+//        .navigationBarTitle("Offer Details", displayMode: .inline)
     }
     
     // Helper function to format distance
