@@ -1,5 +1,3 @@
-// MovementResume.swift
-
 import SwiftUI
 
 struct MovementResume: View {
@@ -23,7 +21,7 @@ struct MovementResume: View {
                     .fontWeight(.regular)
                 
                 HStack{
-                    Text(viewModel.accounts[transaction.fromAccountID] ?? "Loading...")
+                    Text(viewModel.accounts[transaction.accountID] ?? "Loading...")
                         .fontWeight(.light)
                         .font(.system(size:14))
                     
@@ -59,12 +57,12 @@ struct MovementResume: View {
             EditTransactionForm(
                 bankAccountViewModel: BankAccountViewModel(),
                 transactionViewModel: viewModel,
-                transaction: transaction
+                transactionItem: transaction
             )
         }
         .onAppear {
-            if viewModel.accounts[transaction.fromAccountID] == nil {
-                viewModel.getAccountName(fromAccountID: transaction.fromAccountID)
+            if viewModel.accounts[transaction.accountID] == nil {
+                viewModel.getAccountName(accountID: transaction.accountID)
             }
         }
     }

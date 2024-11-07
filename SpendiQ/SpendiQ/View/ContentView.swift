@@ -6,7 +6,7 @@ struct ContentView: View {
     @State private var selectedTab: String = "Home"
     @State private var showOffersList: Bool = false
 
-    // Initialize LocationManager and UserViewModel once and share them across the app
+    // Only instantiate LocationManager once for PromosPage
     @StateObject private var locationManager = LocationManager()
     @StateObject private var userViewModel = UserViewModel() // Initialize without mockData for production
 
@@ -26,8 +26,7 @@ struct ContentView: View {
                             NotificationManager.shared.requestNotificationPermission()
                         }
                 case "Promos":
-                    // Pass the shared LocationManager to PromosPage
-                    PromosPage(locationManager: locationManager)
+                    PromosPage(locationManager: locationManager) // Pass directly to PromosPage
                 case "Accounts":
                     AccountsPage()
                 case "Profile":
@@ -48,24 +47,12 @@ struct ContentView: View {
                     print("Error signing out: \(error.localizedDescription)")
                 }
             })
-            // Hidden NavigationLink for navigation when notification is tapped
-            .background(
-                NavigationLink(
-                    destination: PromosPage(locationManager: locationManager),
-                    isActive: $showOffersList,
-                    label: {
-                        EmptyView()
-                    }
-                )
-                .hidden()
-            )
             // Listen for the "ShowOffersList" notification to navigate to PromosPage
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowOffersList"))) { _ in
                 self.showOffersList = true
             }
         }
-        .environmentObject(locationManager) // <-- Inject LocationManager here
-        .environmentObject(userViewModel)   // Existing injection
+        .environmentObject(userViewModel)
     }
 }
 
@@ -74,6 +61,5 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
             .environmentObject(AppState())
             .environmentObject(UserViewModel(mockData: true))
-            .environmentObject(LocationManager()) // Add for preview
     }
 }

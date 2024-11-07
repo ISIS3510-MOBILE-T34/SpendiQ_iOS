@@ -3,15 +3,15 @@ import MapKit
 
 struct OfferDetailView: View {
     var offer: Offer
-    
     @EnvironmentObject var viewModel: UserViewModel
-    @EnvironmentObject var locationManager: LocationManager
+    @ObservedObject var locationManager: LocationManager // Inject as ObservedObject
     
     @State private var region: MKCoordinateRegion
     @State private var annotationItems: [MapAnnotationItem] = []
     
-    init(offer: Offer) {
+    init(offer: Offer, locationManager: LocationManager) { // Accept locationManager as a parameter
         self.offer = offer
+        self.locationManager = locationManager
         // Initialize region based on offer's location
         _region = State(initialValue: MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: offer.latitude, longitude: offer.longitude),
@@ -29,7 +29,7 @@ struct OfferDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // SPECIAL OFFERS Title
+                // Special Offers Title
                 Text("Special Offers Near You")
                     .font(.title)
                     .fontWeight(.bold)

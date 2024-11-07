@@ -18,12 +18,12 @@ class OfferViewModel: ObservableObject {
     
     init(locationManager: LocationManager, mockData: Bool = false) {
         if mockData {
-            // Mock data
+             //Mock data
             self.offers = []
             self.isLoading = false
             self.showNoOffersMessage = self.offers.isEmpty
         } else {
-            // Observe location updates
+             //Observe location updates
             locationManager.$location
                 .sink { [weak self] location in
                     guard let self = self else { return }
@@ -32,7 +32,7 @@ class OfferViewModel: ObservableObject {
                 }
                 .store(in: &cancellables)
             
-            // Start timer to fetch offers every 10 seconds
+             //Start timer to fetch offers every 10 seconds
             fetchOffersTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
                 self?.fetchOffers()
             }

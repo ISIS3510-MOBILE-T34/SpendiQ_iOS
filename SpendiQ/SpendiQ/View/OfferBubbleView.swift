@@ -1,15 +1,8 @@
-//
-//  OfferBubbleView.swift
-//  SpendiQ
-//
-//  Created by Alonso Hernandez on 30/09/24.
-//
-
 import SwiftUI
 
 struct OfferBubbleView: View {
-
     @ObservedObject var viewModel: OfferViewModel
+    @ObservedObject var locationManager: LocationManager
     @State private var selectedOffer: Offer?
 
     var body: some View {
@@ -47,23 +40,33 @@ struct OfferBubbleView: View {
                         Button(action: {
                             selectedOffer = offer
                         }) {
-                            OfferCardView(offer: offer)
+                            OfferCardView(offer: offer, locationManager: locationManager) // Pass locationManager here
                                 .padding(.vertical, 8)
                         }
                     }
                 }
                 .padding(.horizontal)
             } else {
-                // No loading indicator or blank screen
-                // Optionally, you can show a placeholder or nothing
-                EmptyView()
+                // Display "No offers found" message after 6 seconds
+                VStack {
+                    Image(systemName: "magnifyingglass")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.gray)
+                    Text("No stores were found near you, please try in another area.")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 10)
+                }
+                .padding(.top, 50)
             }
         }
         .background(
             Group {
                 if let offer = selectedOffer {
                     NavigationLink(
-                        destination: OfferDetailView(offer: offer),
+                        destination: OfferDetailView(offer: offer, locationManager: locationManager), // Pass locationManager here
                         isActive: Binding<Bool>(
                             get: { selectedOffer != nil },
                             set: { _ in selectedOffer = nil }
@@ -73,10 +76,7 @@ struct OfferBubbleView: View {
                 }
             }
         )
-        .onAppear {
-            // Ensure no test notification triggers are present
-            // If there's any residual test code, remove or comment it out here
-        }
+        .onAppear { }
     }
 }
 
@@ -84,6 +84,6 @@ struct OfferBubbleView_Previews: PreviewProvider {
     static var previews: some View {
         let locationManager = LocationManager()
         let offerViewModel = OfferViewModel(locationManager: locationManager, mockData: false)
-        OfferBubbleView(viewModel: offerViewModel)
+        OfferBubbleView(viewModel: offerViewModel, locationManager: locationManager) // Pass locationManager here in the preview
     }
 }

@@ -1,4 +1,3 @@
-//
 //  LocationManager.swift
 //  SpendiQ
 //
@@ -20,19 +19,23 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
 
     // UserDefaults key for storing notified offer IDs
     private let notifiedOffersKey = "NotifiedOffers"
+    
+    // Minimum distance (in meters) before updating location to reduce re-renders
+    private let locationUpdateThreshold: CLLocationDistance = 50.0
 
     override init() {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.distanceFilter = locationUpdateThreshold // Set distance filter
         manager.requestWhenInUseAuthorization()
         manager.startUpdatingLocation()
 
         // Load notified offers from UserDefaults
         loadNotifiedOffers()
 
-        // Start proximity timer to check every 20 seconds
-        proximityTimer = Timer.scheduledTimer(timeInterval: 20.0, target: self, selector: #selector(checkProximityToOffers), userInfo: nil, repeats: true)
+        // Start proximity timer to check every 60 seconds
+        proximityTimer = Timer.scheduledTimer(timeInterval: 60.0, target: self, selector: #selector(checkProximityToOffers), userInfo: nil, repeats: true)
 
         // Set the notification center's delegate
         UNUserNotificationCenter.current().delegate = self
@@ -57,7 +60,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
             if let error = error {
                 print("Error fetching offers: \(error.localizedDescription)")
                 return
-            }
+           }
 
             guard let documents = snapshot?.documents else { return }
 
@@ -79,10 +82,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
                 }
             }
 
-            guard !nearbyOffers.isEmpty else { return }
+          guard !nearbyOffers.isEmpty else { return }
 
-            // Sort offers by distance ascending
-            let sortedOffers = nearbyOffers.sorted { $0.1 < $1.1 }
+          // Sort offers by distance ascending
+           let sortedOffers = nearbyOffers.sorted { $0.1 < $1.1 }
 
             // Take top 3 nearest offers
             let topOffers = sortedOffers.prefix(3)
@@ -102,7 +105,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
             let offerDescription = data?["offerDescription"] as? String,
             let shopImageURL = data?["shopImage"] as? String,
             let offerId = offerDoc.documentID as String?,
-            let placeName = data?["placeName"] as? String // Ensure placeName is retrieved
+            let placeName = data?["placeName"] as? String
         else {
             print("Incomplete offer data for notification.")
             return
@@ -110,14 +113,14 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
 
         // Prepare notification content
         let content = UNMutableNotificationContent()
-        content.title = placeName // Set the title to placeName
-        content.body = offerDescription // Set the body to offerDescription
+        content.title = placeName
+        content.body = offerDescription
         content.sound = .default
 
         // Attach shop image if available
         if let url = URL(string: shopImageURL) {
             downloadImage(from: url) { imageData in
-                if let imageData = imageData {
+            if let imageData = imageData {
                     let tempDir = FileManager.default.temporaryDirectory
                     let imageURL = tempDir.appendingPathComponent("\(offerId).jpg")
                     do {
@@ -131,10 +134,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
                     print("Failed to download image for offer \(offerId).")
                 }
 
-                self.scheduleNotification(content: content, offerId: offerId)
+               self.scheduleNotification(content: content, offerId: offerId)
             }
         } else {
-            // If invalid image URL, send notification without attachment
             scheduleNotification(content: content, offerId: offerId)
         }
     }
@@ -154,7 +156,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
     }
 
     private func downloadImage(from url: URL, completion: @escaping (Data?) -> Void) {
-        // Simple image download
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
                 print("Image download error: \(error.localizedDescription)")
@@ -180,7 +181,12 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
     // MARK: - CLLocationManagerDelegate
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        location = locations.last
+        guard let newLocation = locations.last else { return }
+        
+        // Update location only if it has changed significantly
+        if location == nil || newLocation.distance(from: location!) > locationUpdateThreshold {
+            location = newLocation
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -209,7 +215,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // Show the notification as a banner and play a sound even when the app is in the foreground
         completionHandler([.banner, .sound])
     }
 
