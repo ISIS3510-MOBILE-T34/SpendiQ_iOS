@@ -1,3 +1,10 @@
+//
+//  AuthenticationService.swift
+//  SpendiQ
+//
+//  Created by Daniel Clavijo on 30/09/24.
+//
+
 import Foundation
 import Combine
 import FirebaseAuth
@@ -11,11 +18,13 @@ protocol AuthenticationServiceProtocol {
     func confirmPasswordReset(code: String, newPassword: String) -> AnyPublisher<Void, Error>
     func logout() -> AnyPublisher<Bool, Error>
     func getCurrentUser() -> User?
+    func signInWithSavedCredentials(email: String, password: String) -> AnyPublisher<Bool, Error>
 }
 
 class AuthenticationService: AuthenticationServiceProtocol {
     private let db = Firestore.firestore()
     private var cancellables = Set<AnyCancellable>()
+    private var currentNonce: String?
     
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -32,14 +41,37 @@ class AuthenticationService: AuthenticationServiceProtocol {
     }()
     
     func login(email: String, password: String) -> AnyPublisher<Bool, Error> {
-        Deferred {
-            Future { promise in
-                Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
-                    if let error = error {
-                        promise(.failure(error))
-                    } else {
-                        promise(.success(true))
-                    }
+        return Future { promise in
+            Auth.auth().signIn(withEmail: email, password: password) { result, error in
+                if let error = error {
+                    print("Firebase login error: \(error.localizedDescription)")
+                    promise(.failure(error))
+                    return
+                }
+                
+                if let _ = result?.user {
+                    promise(.success(true))
+                } else {
+                    promise(.success(false))
+                }
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+    func signInWithSavedCredentials(email: String, password: String) -> AnyPublisher<Bool, Error> {
+        return Future { promise in
+            Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
+                if let error = error {
+                    print("Firebase saved credentials login error: \(error.localizedDescription)")
+                    promise(.failure(error))
+                    return
+                }
+                
+                if let user = authResult?.user {
+                    print("Successfully logged in with saved credentials for user: \(user.uid)")
+                    promise(.success(true))
+                } else {
+                    promise(.success(false))
                 }
             }
         }.eraseToAnyPublisher()
