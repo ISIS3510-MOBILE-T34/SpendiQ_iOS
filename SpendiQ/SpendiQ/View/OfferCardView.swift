@@ -2,9 +2,10 @@ import SwiftUI
 
 struct OfferCardView: View {
     var offer: Offer
-    
+    @ObservedObject var locationManager: LocationManager
+
     var body: some View {
-        NavigationLink(destination: OfferDetailView(offer: offer)) {
+        NavigationLink(destination: OfferDetailView(offer: offer, locationManager: locationManager)) {
             VStack(alignment: .leading) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
