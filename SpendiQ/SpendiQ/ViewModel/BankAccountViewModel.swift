@@ -5,7 +5,7 @@ import FirebaseAuth
 
 class BankAccountViewModel: ObservableObject {
     @Published var accounts: [BankAccount] = []
-    private let db = Firestore.firestore()
+    private let db = FirestoreManager.shared.db
     
     // Computed property to get the current user's UID
     private var currentUserID: String? {

@@ -8,7 +8,7 @@ class TransactionViewModel: ObservableObject {
     @Published var transactionsByDay: [String: [Transaction]] = [:]
     @Published var totalByDay: [String: Float] = [:]
     @Published var accounts: [String: String] = [:]
-    private let db = Firestore.firestore()
+    private let db = FirestoreManager.shared.db
     private let bankAccountViewModel = BankAccountViewModel()
     
     // Computed property to get the current user's UID
