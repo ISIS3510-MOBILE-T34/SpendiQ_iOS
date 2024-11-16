@@ -1,7 +1,9 @@
 // TransactionViewModel.swift
 
+import Foundation
 import FirebaseFirestore
 import FirebaseAuth
+import CoreData
 
 class TransactionViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
@@ -10,10 +12,18 @@ class TransactionViewModel: ObservableObject {
     @Published var accounts: [String: String] = [:]
     private let db = FirestoreManager.shared.db
     private let bankAccountViewModel = BankAccountViewModel()
+    private let context = PersistenceController.shared.container.viewContext
     
     // Computed property to get the current user's UID
     private var currentUserID: String? {
         return Auth.auth().currentUser?.uid
+    }
+    
+    init() {
+        // Load transactions from cache
+        loadCachedTransactions()
+        // Fetch transactions from Firebase
+        getTransactionsForAllAccounts()
     }
     
     // Fetches transactions for all accounts belonging to the current user
@@ -50,7 +60,7 @@ class TransactionViewModel: ObservableObject {
                                 for transactionDoc in transactionSnapshot?.documents ?? [] {
                                     var transaction = try? transactionDoc.data(as: Transaction.self)
                                     transaction?.id = transactionDoc.documentID
-                                    transaction?.accountID = accountID  
+                                    transaction?.accountID = accountID
                                     
                                     if let transaction = transaction {
                                         transactionsTemp.append(transaction)
@@ -76,6 +86,8 @@ class TransactionViewModel: ObservableObject {
                         self.transactionsByDay = transactionsByDayTemp
                         self.totalByDay = totalByDayTemp
                         print("Loaded transactions for all accounts.")
+                        // Save transactions to cache
+                        self.saveTransactionsToCache()
                     }
                 }
             }
@@ -113,6 +125,9 @@ class TransactionViewModel: ObservableObject {
                             } else {
                                 print("Transaction saved successfully")
                                 self.updateAccountBalanceOnAdd(accountID: accountID, amount: amount, transactionType: transactionType)
+                                // Update cache
+                                self.saveTransactionToCache(transaction: newTransaction)
+                                // Refresh transactions
                                 self.getTransactionsForAllAccounts()
                             }
                         }
@@ -164,6 +179,9 @@ class TransactionViewModel: ObservableObject {
                             } else {
                                 print("Transaction updated successfully")
                                 self.adjustAccountBalanceAfterEdit(accountID: accountID, oldTransaction: transaction, newTransaction: updatedTransaction)
+                                // Update cache
+                                self.updateTransactionInCache(transaction: updatedTransaction)
+                                // Refresh transactions
                                 self.getTransactionsForAllAccounts()
                             }
                         }
@@ -204,6 +222,9 @@ class TransactionViewModel: ObservableObject {
                                     } else {
                                         print("Transaction deleted successfully")
                                         self.reverseAccountBalance(accountID: accountID, amount: transaction.amount, transactionType: transaction.transactionType)
+                                        // Update cache
+                                        self.deleteTransactionFromCache(transactionID: transactionID)
+                                        // Refresh transactions
                                         self.getTransactionsForAllAccounts()
                                     }
                                 }
@@ -286,5 +307,148 @@ class TransactionViewModel: ObservableObject {
         }
         
         bankAccountViewModel.updateAccountBalance(accountID: accountID, amountChange: amountChange)
+    }
+    
+    // MARK: - Caching Methods
+    
+    private func loadCachedTransactions() {
+        let fetchRequest: NSFetchRequest<TransactionEntity> = TransactionEntity.fetchRequest()
+        do {
+            let transactionEntities = try context.fetch(fetchRequest)
+            let cachedTransactions = transactionEntities.map { entity -> Transaction in
+                return Transaction(
+                    id: entity.id,
+                    accountID: entity.accountID ?? "",
+                    transactionName: entity.transactionName ?? "",
+                    amount: entity.amount,
+                    amountAnomaly: entity.amountAnomaly,
+                    automatic: entity.automatic,
+                    dateTime: entity.dateTime ?? Date(),
+                    location: Location(latitude: entity.latitude, longitude: entity.longitude),
+                    locationAnomaly: entity.locationAnomaly,
+                    transactionType: entity.transactionType ?? ""
+                )
+            }
+            self.transactions = cachedTransactions
+            organizeTransactions()
+        } catch {
+            print("Error fetching transactions from cache: \(error.localizedDescription)")
+        }
+    }
+    
+    private func saveTransactionsToCache() {
+        // Remove existing cached transactions
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = TransactionEntity.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        do {
+            try context.execute(deleteRequest)
+        } catch {
+            print("Error deleting old transactions from cache: \(error.localizedDescription)")
+        }
+        
+        // Save new transactions
+        for transaction in transactions {
+            let transactionEntity = TransactionEntity(context: context)
+            transactionEntity.id = transaction.id
+            transactionEntity.accountID = transaction.accountID
+            transactionEntity.transactionName = transaction.transactionName
+            transactionEntity.amount = transaction.amount
+            transactionEntity.amountAnomaly = transaction.amountAnomaly
+            transactionEntity.automatic = transaction.automatic
+            transactionEntity.dateTime = transaction.dateTime
+            transactionEntity.latitude = transaction.location.latitude
+            transactionEntity.longitude = transaction.location.longitude
+            transactionEntity.locationAnomaly = transaction.locationAnomaly
+            transactionEntity.transactionType = transaction.transactionType
+        }
+        
+        saveContext()
+    }
+    
+    private func saveTransactionToCache(transaction: Transaction) {
+        let transactionEntity = TransactionEntity(context: context)
+        transactionEntity.id = transaction.id
+        transactionEntity.accountID = transaction.accountID
+        transactionEntity.transactionName = transaction.transactionName
+        transactionEntity.amount = transaction.amount
+        transactionEntity.amountAnomaly = transaction.amountAnomaly
+        transactionEntity.automatic = transaction.automatic
+        transactionEntity.dateTime = transaction.dateTime
+        transactionEntity.latitude = transaction.location.latitude
+        transactionEntity.longitude = transaction.location.longitude
+        transactionEntity.locationAnomaly = transaction.locationAnomaly
+        transactionEntity.transactionType = transaction.transactionType
+        
+        saveContext()
+    }
+    
+    private func updateTransactionInCache(transaction: Transaction) {
+        let fetchRequest: NSFetchRequest<TransactionEntity> = TransactionEntity.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", transaction.id ?? "")
+        do {
+            let transactionEntities = try context.fetch(fetchRequest)
+            if let transactionEntity = transactionEntities.first {
+                transactionEntity.transactionName = transaction.transactionName
+                transactionEntity.amount = transaction.amount
+                transactionEntity.amountAnomaly = transaction.amountAnomaly
+                transactionEntity.automatic = transaction.automatic
+                transactionEntity.dateTime = transaction.dateTime
+                transactionEntity.latitude = transaction.location.latitude
+                transactionEntity.longitude = transaction.location.longitude
+                transactionEntity.locationAnomaly = transaction.locationAnomaly
+                transactionEntity.transactionType = transaction.transactionType
+                
+                saveContext()
+            }
+        } catch {
+            print("Error updating transaction in cache: \(error.localizedDescription)")
+        }
+    }
+    
+    private func deleteTransactionFromCache(transactionID: String) {
+        let fetchRequest: NSFetchRequest<TransactionEntity> = TransactionEntity.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", transactionID)
+        do {
+            let transactionEntities = try context.fetch(fetchRequest)
+            for entity in transactionEntities {
+                context.delete(entity)
+            }
+            saveContext()
+        } catch {
+            print("Error deleting transaction from cache: \(error.localizedDescription)")
+        }
+    }
+    
+    private func organizeTransactions() {
+        var transactionsByDayTemp: [String: [Transaction]] = [:]
+        var totalByDayTemp: [String: Float] = [:]
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        for transaction in transactions {
+            let day = dateFormatter.string(from: transaction.dateTime)
+            
+            if transactionsByDayTemp[day] != nil {
+                transactionsByDayTemp[day]?.append(transaction)
+            } else {
+                transactionsByDayTemp[day] = [transaction]
+            }
+            
+            totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
+        }
+        
+        DispatchQueue.main.async {
+            self.transactionsByDay = transactionsByDayTemp
+            self.totalByDay = totalByDayTemp
+        }
+    }
+    
+    private func saveContext() {
+        do {
+            try context.save()
+        } catch {
+            print("Error saving context: \(error.localizedDescription)")
+        }
     }
 }
