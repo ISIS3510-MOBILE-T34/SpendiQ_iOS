@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleIdentifier</key>
+	<string></string>
 	<key>API_KEY</key>
 	<string>AIzaSyDyp4HWst_42fs9NiCaLd2xYmiIRMftVjI</string>
 	<key>GCM_SENDER_ID</key>
@@ -26,5 +28,24 @@
 	<true/>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:684669295151:ios:22100ccffcab32570d84da</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>&quot;We use Face ID to securely log you into your account.&quot;</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>&quot;We use notifications to alert you of offers near you.&quot;</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>148.113.204.223</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSTemporaryExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+            </dict>
+        </dict>
+    </dict>
 </dict>
 </plist>
