@@ -1,7 +1,10 @@
+// Developed by Alonso Hernandez
+
 import SwiftUI
 import FirebaseFirestore
 import CoreLocation
 import Combine
+import CoreData // Sprint 3
 
 class OfferViewModel: ObservableObject {
     @Published var offers: [Offer] = []
@@ -15,15 +18,18 @@ class OfferViewModel: ObservableObject {
     private var noOffersTimer: Timer?
     private var fetchOffersTimer: Timer?
     private var isFetching: Bool = false
+    public var shouldFetchOnAppear: Bool = true
+
+    private let context = CoreDataManager.shared.context // Sprint 3
     
     init(locationManager: LocationManager, mockData: Bool = false) {
         if mockData {
-             //Mock data
+            print("Using mock data for offers.")
             self.offers = []
             self.isLoading = false
             self.showNoOffersMessage = self.offers.isEmpty
         } else {
-             //Observe location updates
+            print("Initializing OfferViewModel with live data.")
             locationManager.$location
                 .sink { [weak self] location in
                     guard let self = self else { return }
@@ -32,64 +38,65 @@ class OfferViewModel: ObservableObject {
                 }
                 .store(in: &cancellables)
             
-             //Start timer to fetch offers every 10 seconds
             fetchOffersTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
                 self?.fetchOffers()
             }
         }
     }
     
+    func removeOldOfferImages(newOffers: [Offer]) {
+        let newOfferKeys = Set(newOffers.compactMap { $0.id }) // Using compactMap to remove nils
+        let currentOfferKeys = Set(offers.compactMap { $0.id })
+
+        let removedOffers = currentOfferKeys.subtracting(newOfferKeys)
+        ImageCacheManager.shared.clearCache(forKeys: Array(removedOffers))
+    }
+    
     func fetchOffers() {
         guard let userLocation = self.userLocation else {
-            print("User location not available.")
-            DispatchQueue.main.async {
-                self.isLoading = false
-                self.showNoOffersMessage = true
-            }
+            print("User location not available. Loading cached offers.")
+            loadCachedOffers() // Sprint 3: Network falling back to Cache
             return
         }
-        
+
         guard !isFetching else {
-            print("Fetch already in progress.")
+            print("Fetch already in progress. Skipping fetch.")
             return
         }
         
-        isFetching = true
-        self.isLoading = true
-        self.showNoOffersMessage = false
-        
-        noOffersTimer?.invalidate()
-        noOffersTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            if self.offers.isEmpty {
-                self.showNoOffersMessage = true
-                print("No offers found within 6 seconds.")
-            }
+        if !ReachabilityManager.shared.isConnected {
+            // If offline, simply load cached offers without fetching from Firebase
+            print("Offline: Loading cached offers.")
+            loadCachedOffers()
+            return
         }
         
-        print("Fetching offers for location: \(userLocation.coordinate.latitude), \(userLocation.coordinate.longitude)")
-        
+        if !shouldFetchOnAppear {
+            print("Skipping fetch since the view is returning from the detail view.")
+            return
+        }
+
+        // Proceed with online fetching
+        isFetching = true
+        isLoading = true
+        showNoOffersMessage = false
+        print("Fetching offers from Firebase...")
         db.collection("offers").getDocuments { [weak self] snapshot, error in
             guard let self = self else { return }
             defer { self.isFetching = false }
-            
+
             if let error = error {
-                print("Error fetching offers: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                    self.showNoOffersMessage = true
-                }
+                print("Error fetching offers from Firebase: \(error.localizedDescription)")
+                self.loadCachedOffers()
                 return
             }
-            
+
             guard let documents = snapshot?.documents else {
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                    self.showNoOffersMessage = true
-                }
+                print("No documents found in Firebase. Loading cached offers.")
+                self.loadCachedOffers()
                 return
             }
-            
+
             var fetchedOffers: [Offer] = []
             
             for doc in documents {
@@ -105,11 +112,9 @@ class OfferViewModel: ObservableObject {
                     print("Incomplete offer data for document ID: \(doc.documentID)")
                     continue
                 }
-                
+
                 let shopLocation = CLLocation(latitude: latitude, longitude: longitude)
                 let distanceInMeters = userLocation.distance(from: shopLocation)
-                
-                print("Offer '\(shopName)' is \(distanceInMeters) meters away from the user.")
                 
                 if distanceInMeters <= 1000 {
                     let offer = Offer(
@@ -130,12 +135,72 @@ class OfferViewModel: ObservableObject {
             }
             
             DispatchQueue.main.async {
-                self.offers.append(contentsOf: fetchedOffers)
-                self.offers.sort { $0.distance < $1.distance }
+                print("Fetched \(fetchedOffers.count) offers from Firebase.")
+                self.removeOldOfferImages(newOffers: fetchedOffers) // Sprint 3: Removing old images
+                self.offers = fetchedOffers
+                self.cacheOffers(fetchedOffers)
                 self.isLoading = false
                 self.noOffersTimer?.invalidate()
                 self.showNoOffersMessage = self.offers.isEmpty
             }
+        }
+    }
+
+    private func cacheOffers(_ offers: [Offer]) { // Sprint 3: Caching offers to handle the ECS3
+        print("Caching \(offers.count) offers to Core Data...")
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = OfferEntity.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        do {
+            try context.execute(deleteRequest)
+            
+            for offer in offers {
+                let offerEntity = OfferEntity(context: context)
+                offerEntity.id = offer.id
+                offerEntity.placeName = offer.placeName
+                offerEntity.offerDescription = offer.offerDescription
+                offerEntity.recommendationReason = offer.recommendationReason
+                offerEntity.shopImage = offer.shopImage
+                offerEntity.latitude = offer.latitude
+                offerEntity.longitude = offer.longitude
+                offerEntity.distance = Int16(offer.distance)
+            }
+            
+            try context.save()
+            print("Successfully cached offers.")
+        } catch {
+            print("Error caching offers: \(error)")
+        }
+    }
+
+    func loadCachedOffers() {
+        print("Loading cached offers from Core Data...")
+        let fetchRequest: NSFetchRequest<OfferEntity> = OfferEntity.fetchRequest()
+        
+        do {
+            let cachedEntities = try context.fetch(fetchRequest)
+            let cachedOffers = cachedEntities.map { entity in
+                Offer(
+                    id: entity.id ?? "",
+                    placeName: entity.placeName ?? "",
+                    offerDescription: entity.offerDescription ?? "",
+                    recommendationReason: entity.recommendationReason ?? "",
+                    shopImage: entity.shopImage ?? "",
+                    latitude: entity.latitude,
+                    longitude: entity.longitude,
+                    distance: Int(entity.distance),
+                    shop: ""
+                )
+            }
+            
+            DispatchQueue.main.async {
+                print("Loaded \(cachedOffers.count) cached offers.")
+                self.offers = cachedOffers
+                self.isLoading = false
+                self.showNoOffersMessage = cachedOffers.isEmpty
+            }
+        } catch {
+            print("Error loading cached offers: \(error)")
         }
     }
     
