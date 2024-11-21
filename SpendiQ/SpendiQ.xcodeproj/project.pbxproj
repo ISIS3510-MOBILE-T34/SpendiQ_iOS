@@ -59,9 +59,7 @@
 				Info.plist,
 				Services/DataService.swift,
 				View/SpecialOffersAlertView.swift,
-				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
-				ViewModel/SpecialOffersViewModel.swift,
 			);
 			target = 27D3DB842CA5E4BB005FCD91 /* SpendiQ */;
 		};
@@ -74,9 +72,7 @@
 			membershipExceptions = (
 				Services/DataService.swift,
 				View/SpecialOffersAlertView.swift,
-				View/SpecialOffersListView.swift,
 				ViewModel/OfferDetailViewModel.swift,
-				ViewModel/SpecialOffersViewModel.swift,
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
@@ -485,7 +481,7 @@
 				DEVELOPMENT_TEAM = 84BH7BWX4T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SpendiQ/Info.plist;
+				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = SpendiQ;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"We need your location to show offers even when the app is not in use.\"";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"We need your location to show nearby offers and shops.\"";
@@ -520,7 +516,7 @@
 				DEVELOPMENT_TEAM = 84BH7BWX4T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SpendiQ/Info.plist;
+				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = SpendiQ;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"We need your location to show offers even when the app is not in use.\"";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"We need your location to show nearby offers and shops.\"";
