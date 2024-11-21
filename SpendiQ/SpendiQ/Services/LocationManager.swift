@@ -15,9 +15,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
     @Published var location: CLLocation?
     private var proximityTimer: Timer?
     private let db = Firestore.firestore()
-    private var notifiedOffers: Set<String> = [] // Track notified offers
+    private var notifiedOffers: Set<String> = [] // Sprint 3 - Alonso Local Storage: Track notified offers
 
-    // UserDefaults key for storing notified offer IDs
+    // UserDefaults key for storing notified offer IDs - Local Storage: Sprint 3 Alonso
     private let notifiedOffersKey = "NotifiedOffers"
     
     // Minimum distance (in meters) before updating location to reduce re-renders
@@ -53,51 +53,59 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
     @objc private func checkProximityToOffers() {
         guard let currentLocation = self.location else { return }
 
-        // Query offers
+        // Sprint 3 - Alonso: Added a background thread for database querying using DispatchQueue.global.
+        // This ensures the database fetch operation doesn't block the main thread and improves app responsiveness.
         db.collection("offers").getDocuments { [weak self] snapshot, error in
             guard let self = self else { return }
-
+            
             if let error = error {
                 print("Error fetching offers: \(error.localizedDescription)")
                 return
-           }
-
-            guard let documents = snapshot?.documents else { return }
-
-            // Filter offers within 1km and not notified
-            let nearbyOffers = documents.compactMap { doc -> (DocumentSnapshot, Double)? in
-                guard
-                    let latitude = doc.data()["latitude"] as? Double,
-                    let longitude = doc.data()["longitude"] as? Double,
-                    let offerId = doc.documentID as String?
-                else { return nil }
-
-                let offerLocation = CLLocation(latitude: latitude, longitude: longitude)
-                let distance = currentLocation.distance(from: offerLocation)
-
-                if distance <= 1000 && !self.notifiedOffers.contains(offerId) {
-                    return (doc, distance)
-                } else {
-                    return nil
-                }
             }
+            
+            // Sprint 3 - Alonso: Process the data on a global background thread for better performance.
+            DispatchQueue.global(qos: .userInitiated).async {
+                guard let documents = snapshot?.documents else { return }
 
-          guard !nearbyOffers.isEmpty else { return }
+                let nearbyOffers = documents.compactMap { doc -> (DocumentSnapshot, Double)? in
+                    guard
+                        let latitude = doc.data()["latitude"] as? Double,
+                        let longitude = doc.data()["longitude"] as? Double,
+                        let offerId = doc.documentID as String?
+                    else { return nil }
 
-          // Sort offers by distance ascending
-           let sortedOffers = nearbyOffers.sorted { $0.1 < $1.1 }
+                    let offerLocation = CLLocation(latitude: latitude, longitude: longitude)
+                    let distance = self.location?.distance(from: offerLocation) ?? .greatestFiniteMagnitude
 
-            // Take top 3 nearest offers
-            let topOffers = sortedOffers.prefix(3)
+                    // Sprint 3 - Alonso Local Storage: Skip already-notified offers using isOfferNotified
+                    if distance <= 1000 && !self.isOfferNotified(offerId) {
+                        return (doc, distance)
+                    } else {
+                        return nil
+                    }
+                }
 
-            // Send notifications with 5 seconds delay between each
-            for (index, (offerDoc, _)) in topOffers.enumerated() {
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 5.0) {
-                    self.processOfferNotification(offerDoc)
+                // Sprint 3 - Alonso: Switch back to the main thread for UI-related tasks such as sending notifications.
+                DispatchQueue.main.async {
+                    guard !nearbyOffers.isEmpty else { return }
+
+                    let sortedOffers = nearbyOffers.sorted { $0.1 < $1.1 }
+                    let topOffers = sortedOffers.prefix(3)
+
+                    for (index, (offerDoc, _)) in topOffers.enumerated() {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 5.0) {
+                            let offerId = offerDoc.documentID
+                            self.processOfferNotification(offerDoc)
+                            
+                            // Sprint 3 - Alonso: Mark the offer as notified
+                            self.addNotifiedOffer(offerId)
+                        }
+                    }
                 }
             }
         }
     }
+
 
     private func processOfferNotification(_ offerDoc: DocumentSnapshot) {
         let data = offerDoc.data()
@@ -155,28 +163,65 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate, UN
         }
     }
 
+    // Sprint 3 - Alonso: Using a background thread for downloading images using URLSession. These images are the one used in the Offers notification to the users.
+    // Sprint 3 - Alonso: This offloads image download tasks from the main thread, which ensures smooth UI performance.
     private func downloadImage(from url: URL, completion: @escaping (Data?) -> Void) {
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                print("Image download error: \(error.localizedDescription)")
-                completion(nil)
-                return
+        DispatchQueue.global(qos: .utility).async { // .global: background thread with quality of service set for utility
+            let dataTask = URLSession.shared.dataTask(with: url) { data, response, error in
+                if let error = error {
+                    print("Image download error: \(error.localizedDescription)")
+                    DispatchQueue.main.async {
+                        completion(nil)
+                    }
+                    return
+                }
+
+                // Sprint 3: Return the downloaded image data back to the main thread to update UI-related elements.
+                DispatchQueue.main.async {
+                    completion(data)
+                }
             }
-            completion(data)
-        }.resume()
+
+            dataTask.resume()
+        }
     }
 
     // MARK: - UserDefaults Handling
 
+    // Sprint 3 - Alonso: Load notified offers from local storage
     private func loadNotifiedOffers() {
         if let savedOffers = UserDefaults.standard.array(forKey: notifiedOffersKey) as? [String] {
             notifiedOffers = Set(savedOffers)
+            print("Sprint 3 - Alonso: Loaded notified offers from local storage: \(notifiedOffers)")
+        } else {
+            print("Sprint 3 - Alonso: No notified offers found in local storage.")
+        }
+    }
+    
+    // Sprint 3 - Alonso: Save notified offers to local storage
+    private func saveNotifiedOffers() {
+        UserDefaults.standard.set(Array(notifiedOffers), forKey: notifiedOffersKey)
+        print("Sprint 3 - Alonso: Saved notified offers to local storage: \(notifiedOffers)")
+    }
+    
+    // Sprint 3 - Alonso: Add a new notified offer
+    func addNotifiedOffer(_ offerID: String) {
+        if !notifiedOffers.contains(offerID) {
+            notifiedOffers.insert(offerID)
+            saveNotifiedOffers()
+            print("Sprint 3 - Alonso: Added offer \(offerID) to notified offers.")
+        } else {
+            print("Sprint 3 - Alonso: Offer \(offerID) already exists in notified offers.")
         }
     }
 
-    private func saveNotifiedOffers() {
-        UserDefaults.standard.set(Array(notifiedOffers), forKey: notifiedOffersKey)
+    // Sprint 3 - Alonso: Check if an offer has already been notified
+    func isOfferNotified(_ offerID: String) -> Bool {
+        let isNotified = notifiedOffers.contains(offerID)
+        print("Sprint 3 - Alonso: Offer \(offerID) notified status: \(isNotified)")
+        return isNotified
     }
+
 
     // MARK: - CLLocationManagerDelegate
 

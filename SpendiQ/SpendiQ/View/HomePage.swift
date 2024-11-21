@@ -1,11 +1,11 @@
-// HomePage.swift
-
 import SwiftUI
 import FirebaseAuth
 
 struct HomePage: View {
     @EnvironmentObject var appState: AppState
     @State private var CurrentBalance: Int = 0
+    @State private var totalIncome: Double = 0
+    @State private var totalExpenses: Double = 0
     @ObservedObject private var viewModel = TransactionViewModel()
     @ObservedObject private var bankAccountViewModel = BankAccountViewModel()
 
@@ -40,6 +40,14 @@ struct HomePage: View {
                 Divider()
                     .frame(width: 361)
                 
+                // Sprint 3 - Alonso: Add OverviewView
+                OverviewView(
+                    totalIncome: totalIncome,
+                    totalExpenses: totalExpenses,
+                    monthName: DateFormatter().monthSymbols[Calendar.current.component(.month, from: Date()) - 1]
+                )
+                .padding(.bottom, 12)
+                
                 Text("Movements")
                     .font(.custom("SF Pro", size: 19))
                     .fontWeight(.regular)
@@ -56,19 +64,11 @@ struct HomePage: View {
             .onAppear {
                 viewModel.getTransactionsForAllAccounts()
                 bankAccountViewModel.getBankAccounts()
-            }
-            .onReceive(viewModel.objectWillChange) { _ in
-                // Update the view when the viewModel changes
-            }
-            .onReceive(bankAccountViewModel.objectWillChange) { _ in
-                // Update the balance when the bankAccountViewModel changes
-                Button("Log Out") {
-                    do {
-                        try Auth.auth().signOut()
-                        // AppState se actualizará automáticamente debido al listener
-                    } catch {
-                        print("Error signing out: \(error.localizedDescription)")
-                    }
+
+                // Sprint 3 - Alonso: Fetch income and expenses for the current month using TransactionViewModel
+                viewModel.calculateMonthlyIncomeAndExpenses { income, expenses in
+                    totalIncome = income
+                    totalExpenses = expenses
                 }
             }
         }

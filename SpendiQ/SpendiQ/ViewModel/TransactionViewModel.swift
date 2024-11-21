@@ -11,10 +11,122 @@ class TransactionViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private let bankAccountViewModel = BankAccountViewModel()
     
+    // Sprint 3 - Alonso: UserDefaults keys for financial snapshot
+    private let monthlySnapshotKey = "MonthlyFinancialSnapshot"
+    private let snapshotTimestampKey = "SnapshotTimestamp"
+
+    
     // Computed property to get the current user's UID
     private var currentUserID: String? {
         return Auth.auth().currentUser?.uid
     }
+    
+    // Sprint 3 - Alonso Local Storage: Save monthly snapshot to local storage
+    private func saveMonthlySnapshot(income: Double, expenses: Double) {
+        let snapshot = ["income": income, "expenses": expenses]
+        UserDefaults.standard.set(snapshot, forKey: monthlySnapshotKey)
+        UserDefaults.standard.set(Date(), forKey: snapshotTimestampKey)
+        print("Sprint 3 - Alonso: Saved monthly snapshot to local storage: \(snapshot)")
+    }
+    
+    // Sprint 3 - Alonso Local Storage: Load monthly snapshot from local storage
+    private func loadMonthlySnapshot() -> (income: Double, expenses: Double)? {
+        guard let snapshot = UserDefaults.standard.dictionary(forKey: monthlySnapshotKey) as? [String: Double],
+              let timestamp = UserDefaults.standard.object(forKey: snapshotTimestampKey) as? Date else {
+            print("Sprint 3 - Alonso: No snapshot found in local storage.")
+            return nil
+        }
+
+        let currentMonth = Calendar.current.component(.month, from: Date())
+        let snapshotMonth = Calendar.current.component(.month, from: timestamp)
+
+        if currentMonth == snapshotMonth {
+            print("Sprint 3 - Alonso: Loaded snapshot from local storage: \(snapshot)")
+            return (income: snapshot["income"] ?? 0, expenses: snapshot["expenses"] ?? 0)
+        } else {
+            print("Sprint 3 - Alonso: Snapshot is outdated.")
+            return nil
+        }
+    }
+
+
+    
+    func calculateMonthlyIncomeAndExpenses(completion: @escaping (Double, Double) -> Void) {
+        // Sprint 3 - Alonso: Check local storage first
+        if let snapshot = loadMonthlySnapshot() {
+            completion(snapshot.income, snapshot.expenses)
+            return
+        }
+
+        // Sprint 3 - Alonso: No valid snapshot found, fetch from Firestore
+        guard let userID = currentUserID else {
+            print("No authenticated user.")
+            completion(0, 0)
+            return
+        }
+
+        db.collection("accounts")
+            .whereField("user_id", isEqualTo: userID)
+            .getDocuments { (querySnapshot, error) in
+                if let error = error {
+                    print("Error retrieving accounts: \(error.localizedDescription)")
+                    completion(0, 0)
+                    return
+                }
+
+                guard let documents = querySnapshot?.documents else {
+                    print("No accounts found.")
+                    completion(0, 0)
+                    return
+                }
+
+                var totalIncome: Double = 0
+                var totalExpenses: Double = 0
+                let group = DispatchGroup()
+
+                let currentMonth = Calendar.current.component(.month, from: Date())
+                let currentYear = Calendar.current.component(.year, from: Date())
+
+                for document in documents {
+                    let accountID = document.documentID
+
+                    group.enter()
+                    self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, transactionError) in
+                        if let transactionError = transactionError {
+                            print("Error retrieving transactions for account \(accountID): \(transactionError.localizedDescription)")
+                            group.leave()
+                            return
+                        }
+
+                        for transactionDoc in transactionSnapshot?.documents ?? [] {
+                            if let transactionType = transactionDoc.data()["transactionType"] as? String,
+                               let amount = transactionDoc.data()["amount"] as? Double,
+                               let dateTime = transactionDoc.data()["dateTime"] as? Timestamp {
+                                let transactionDate = dateTime.dateValue()
+                                let transactionMonth = Calendar.current.component(.month, from: transactionDate)
+                                let transactionYear = Calendar.current.component(.year, from: transactionDate)
+
+                                if transactionMonth == currentMonth && transactionYear == currentYear {
+                                    if transactionType == "Income" {
+                                        totalIncome += amount
+                                    } else if transactionType == "Expense" {
+                                        totalExpenses += amount
+                                    }
+                                }
+                            }
+                        }
+                        group.leave()
+                    }
+                }
+
+                group.notify(queue: .main) {
+                    print("Sprint 3 - Alonso: Fetched monthly totals from Firestore. Income: \(totalIncome), Expenses: \(totalExpenses)")
+                    self.saveMonthlySnapshot(income: totalIncome, expenses: totalExpenses)
+                    completion(totalIncome, totalExpenses)
+                }
+            }
+    }
+
     
     // Fetches transactions for all accounts belonging to the current user
     func getTransactionsForAllAccounts() {
