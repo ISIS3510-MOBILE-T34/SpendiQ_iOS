@@ -33,122 +33,131 @@ class TransactionViewModel: ObservableObject {
             return
         }
 
-        db.collection("accounts")
-            .whereField("user_id", isEqualTo: userID)
-            .getDocuments { (querySnapshot, error) in
-                if let error = error {
-                    print("Error retrieving accounts: \(error.localizedDescription)")
-                } else {
-                    var transactionsTemp: [Transaction] = []
-                    var transactionsByDayTemp: [String: [Transaction]] = [:]
-                    var totalByDayTemp: [String: Float] = [:]
+        DispatchQueue.global(qos: .background).async { // Run in the background
+            self.db.collection("accounts")
+                .whereField("user_id", isEqualTo: userID)
+                .getDocuments { (querySnapshot, error) in
+                    if let error = error {
+                        print("Error retrieving accounts: \(error.localizedDescription)")
+                    } else {
+                        var transactionsTemp: [Transaction] = []
+                        var transactionsByDayTemp: [String: [Transaction]] = [:]
+                        var totalByDayTemp: [String: Float] = [:]
 
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateFormat = "yyyy-MM-dd"
 
-                    let group = DispatchGroup()
+                        let group = DispatchGroup()
 
-                    for document in querySnapshot?.documents ?? [] {
-                        let accountID = document.documentID
-                        self.getAccountName(accountID: accountID)
+                        for document in querySnapshot?.documents ?? [] {
+                            let accountID = document.documentID
+                            self.getAccountName(accountID: accountID)
 
-                        group.enter()
-                        self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
-                            if let error = error {
-                                print("Error retrieving transactions: \(error.localizedDescription)")
-                            } else {
-                                for transactionDoc in transactionSnapshot?.documents ?? [] {
-                                    var transaction = try? transactionDoc.data(as: Transaction.self)
-                                    transaction?.id = transactionDoc.documentID
-                                    transaction?.accountID = accountID
+                            group.enter()
+                            self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
+                                if let error = error {
+                                    print("Error retrieving transactions: \(error.localizedDescription)")
+                                } else {
+                                    for transactionDoc in transactionSnapshot?.documents ?? [] {
+                                        var transaction = try? transactionDoc.data(as: Transaction.self)
+                                        transaction?.id = transactionDoc.documentID
+                                        transaction?.accountID = accountID
 
-                                    if let transaction = transaction {
-                                        transactionsTemp.append(transaction)
+                                        if let transaction = transaction {
+                                            transactionsTemp.append(transaction)
 
-                                        let day = dateFormatter.string(from: transaction.dateTime)
+                                            let day = dateFormatter.string(from: transaction.dateTime)
 
-                                        if transactionsByDayTemp[day] != nil {
-                                            transactionsByDayTemp[day]?.append(transaction)
-                                        } else {
-                                            transactionsByDayTemp[day] = [transaction]
+                                            if transactionsByDayTemp[day] != nil {
+                                                transactionsByDayTemp[day]?.append(transaction)
+                                            } else {
+                                                transactionsByDayTemp[day] = [transaction]
+                                            }
+
+                                            totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
                                         }
-
-                                        totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
                                     }
                                 }
+                                group.leave()
                             }
-                            group.leave()
+                        }
+
+                        group.notify(queue: .global(qos: .background)) {
+                            // Save transactions to cache in the background
+                            self.saveTransactionsToCache()
+
+                            // Update the ViewModel on the main thread
+                            DispatchQueue.main.async {
+                                self.transactions = transactionsTemp
+                                self.transactionsByDay = transactionsByDayTemp
+                                self.totalByDay = totalByDayTemp
+                                print("Loaded transactions for all accounts.")
+                                self.objectWillChange.send()
+                            }
                         }
                     }
-
-                    group.notify(queue: .main) {
-                        self.transactions = transactionsTemp
-                        self.transactionsByDay = transactionsByDayTemp
-                        self.totalByDay = totalByDayTemp
-                        print("Loaded transactions for all accounts.")
-                        // Save transactions to cache
-                        self.saveTransactionsToCache()
-                    }
                 }
-            }
+        }
     }
-
-    // Adds a new transaction to a specific account
+    
+    // add transaction to an account
     func addTransaction(accountID: String, transactionName: String, amount: Float, transactionType: String, dateTime: Date, location: Location, amountAnomaly: Bool = false, locationAnomaly: Bool = false, automatic: Bool = false) {
         guard let userID = currentUserID else {
             print("No authenticated user.")
             return
         }
 
-        // Verify that the account belongs to the current user
-        db.collection("accounts").document(accountID).getDocument { (document, error) in
-            if let document = document, document.exists {
-                let accountUserID = document.data()?["user_id"] as? String
-                if accountUserID == userID {
-                    // Create a new document reference with an auto-generated ID
-                    let docRef = self.db.collection("accounts").document(accountID).collection("transactions").document()
-                    let transactionId = docRef.documentID
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.db.collection("accounts").document(accountID).getDocument { (document, error) in
+                if let document = document, document.exists {
+                    let accountUserID = document.data()?["user_id"] as? String
+                    if accountUserID == userID {
+                        let docRef = self.db.collection("accounts").document(accountID).collection("transactions").document()
+                        let transactionId = docRef.documentID
 
-                    var newTransaction = Transaction(
-                        id: transactionId,
-                        accountID: accountID,
-                        transactionName: transactionName,
-                        amount: amount,
-                        amountAnomaly: amountAnomaly,
-                        automatic: automatic,
-                        dateTime: dateTime,
-                        location: location,
-                        locationAnomaly: locationAnomaly,
-                        transactionType: transactionType
-                    )
+                        var newTransaction = Transaction(
+                            id: transactionId,
+                            accountID: accountID,
+                            transactionName: transactionName,
+                            amount: amount,
+                            amountAnomaly: amountAnomaly,
+                            automatic: automatic,
+                            dateTime: dateTime,
+                            location: location,
+                            locationAnomaly: locationAnomaly,
+                            transactionType: transactionType
+                        )
 
-                    do {
-                        try docRef.setData(from: newTransaction) { error in
-                            if let error = error {
-                                print("Error saving transaction: \(error.localizedDescription)")
-                            } else {
-                                print("Transaction saved successfully")
-                                self.updateAccountBalanceOnAdd(accountID: accountID, amount: amount, transactionType: transactionType)
-                                // Call analyzeTransaction function
-                                self.analyzeTransaction(userId: userID, transactionId: transactionId)
-                                // Update cache
-                                self.saveTransactionToCache(transaction: newTransaction)
-                                // Refresh transactions
-                                self.getTransactionsForAllAccounts()
+                        do {
+                            try docRef.setData(from: newTransaction) { error in
+                                if let error = error {
+                                    print("Error saving transaction: \(error.localizedDescription)")
+                                } else {
+                                    print("Transaction saved successfully")
+                                    self.updateAccountBalanceOnAdd(accountID: accountID, amount: amount, transactionType: transactionType)
+                                    
+                                    // Cache and update state in the background
+                                    self.saveTransactionToCache(transaction: newTransaction)
+                                    
+                                    DispatchQueue.main.async {
+                                        self.transactions.append(newTransaction)
+                                        self.organizeTransactions()
+                                        self.objectWillChange.send()
+                                    }
+                                }
                             }
+                        } catch {
+                            print("Error saving transaction: \(error.localizedDescription)")
                         }
-                    } catch {
-                        print("Error saving transaction: \(error.localizedDescription)")
+                    } else {
+                        print("Permission denied: You can only add transactions to your own accounts.")
                     }
                 } else {
-                    print("Permission denied: You can only add transactions to your own accounts.")
+                    print("Account does not exist.")
                 }
-            } else {
-                print("Account does not exist.")
             }
         }
     }
-
     // Updates an existing transaction
     func updateTransaction(accountID: String, transaction: Transaction, transactionName: String, amount: Float, transactionType: String, dateTime: Date, location: Location, amountAnomaly: Bool = false, locationAnomaly: Bool = false, automatic: Bool = false) {
         guard let userID = currentUserID else {
@@ -160,45 +169,53 @@ class TransactionViewModel: ObservableObject {
             return
         }
 
-        // Verify that the account belongs to the current user
-        db.collection("accounts").document(accountID).getDocument { (document, error) in
-            if let document = document, document.exists {
-                let accountUserID = document.data()?["user_id"] as? String
-                if accountUserID == userID {
-                    let updatedTransaction = Transaction(
-                        id: transactionID,
-                        accountID: accountID,
-                        transactionName: transactionName,
-                        amount: amount,
-                        amountAnomaly: amountAnomaly,
-                        automatic: automatic,
-                        dateTime: dateTime,
-                        location: location,
-                        locationAnomaly: locationAnomaly,
-                        transactionType: transactionType
-                    )
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.db.collection("accounts").document(accountID).getDocument { (document, error) in
+                if let document = document, document.exists {
+                    let accountUserID = document.data()?["user_id"] as? String
+                    if accountUserID == userID {
+                        let updatedTransaction = Transaction(
+                            id: transactionID,
+                            accountID: accountID,
+                            transactionName: transactionName,
+                            amount: amount,
+                            amountAnomaly: amountAnomaly,
+                            automatic: automatic,
+                            dateTime: dateTime,
+                            location: location,
+                            locationAnomaly: locationAnomaly,
+                            transactionType: transactionType
+                        )
 
-                    do {
-                        try self.db.collection("accounts").document(accountID).collection("transactions").document(transactionID).setData(from: updatedTransaction) { error in
-                            if let error = error {
-                                print("Error updating transaction: \(error.localizedDescription)")
-                            } else {
-                                print("Transaction updated successfully")
-                                self.adjustAccountBalanceAfterEdit(accountID: accountID, oldTransaction: transaction, newTransaction: updatedTransaction)
-                                // Update cache
-                                self.updateTransactionInCache(transaction: updatedTransaction)
-                                // Refresh transactions
-                                self.getTransactionsForAllAccounts()
+                        do {
+                            try self.db.collection("accounts").document(accountID).collection("transactions").document(transactionID).setData(from: updatedTransaction) { error in
+                                if let error = error {
+                                    print("Error updating transaction: \(error.localizedDescription)")
+                                } else {
+                                    print("Transaction updated successfully")
+                                    self.adjustAccountBalanceAfterEdit(accountID: accountID, oldTransaction: transaction, newTransaction: updatedTransaction)
+                                    
+                                    // Cache and update state in the background
+                                    self.updateTransactionInCache(transaction: updatedTransaction)
+                                    
+                                    DispatchQueue.main.async {
+                                        if let index = self.transactions.firstIndex(where: { $0.id == transactionID }) {
+                                            self.transactions[index] = updatedTransaction
+                                            self.organizeTransactions()
+                                            self.objectWillChange.send()
+                                        }
+                                    }
+                                }
                             }
+                        } catch {
+                            print("Error updating transaction: \(error.localizedDescription)")
                         }
-                    } catch {
-                        print("Error updating transaction: \(error.localizedDescription)")
+                    } else {
+                        print("Permission denied: You can only update transactions in your own accounts.")
                     }
                 } else {
-                    print("Permission denied: You can only update transactions in your own accounts.")
+                    print("Account does not exist.")
                 }
-            } else {
-                print("Account does not exist.")
             }
         }
     }
@@ -210,42 +227,47 @@ class TransactionViewModel: ObservableObject {
             return
         }
 
-        // Verify that the account belongs to the current user
-        db.collection("accounts").document(accountID).getDocument { (document, error) in
-            if let document = document, document.exists {
-                let accountUserID = document.data()?["user_id"] as? String
-                if accountUserID == userID {
-                    // Fetch the transaction to get its details
-                    self.db.collection("accounts").document(accountID).collection("transactions").document(transactionID).getDocument { (document, error) in
-                        if let document = document, document.exists {
-                            var transaction = try? document.data(as: Transaction.self)
-                            transaction?.id = transactionID
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.db.collection("accounts").document(accountID).getDocument { (document, error) in
+                if let document = document, document.exists {
+                    let accountUserID = document.data()?["user_id"] as? String
+                    if accountUserID == userID {
+                        self.db.collection("accounts").document(accountID).collection("transactions").document(transactionID).getDocument { (transactionDoc, error) in
+                            if let transactionDoc = transactionDoc, transactionDoc.exists {
+                                var transaction = try? transactionDoc.data(as: Transaction.self)
+                                transaction?.id = transactionID
 
-                            if let transaction = transaction {
-                                self.db.collection("accounts").document(accountID).collection("transactions").document(transactionID).delete { error in
-                                    if let error = error {
-                                        print("Error deleting transaction: \(error.localizedDescription)")
-                                    } else {
-                                        print("Transaction deleted successfully")
-                                        self.reverseAccountBalance(accountID: accountID, amount: transaction.amount, transactionType: transaction.transactionType)
-                                        // Update cache
-                                        self.deleteTransactionFromCache(transactionID: transactionID)
-                                        // Refresh transactions
-                                        self.getTransactionsForAllAccounts()
+                                if let transaction = transaction {
+                                    self.db.collection("accounts").document(accountID).collection("transactions").document(transactionID).delete { error in
+                                        if let error = error {
+                                            print("Error deleting transaction: \(error.localizedDescription)")
+                                        } else {
+                                            print("Transaction deleted successfully")
+                                            self.reverseAccountBalance(accountID: accountID, amount: transaction.amount, transactionType: transaction.transactionType)
+                                            
+                                            // Cache and update state in the background
+                                            self.deleteTransactionFromCache(transactionID: transactionID)
+                                            
+                                            DispatchQueue.main.async {
+                                                self.transactions.removeAll(where: { $0.id == transactionID })
+                                                self.organizeTransactions()
+                                                self.objectWillChange.send()
+                                            }
+                                        }
                                     }
+                                } else {
+                                    print("Transaction data is invalid.")
                                 }
                             } else {
-                                print("Transaction data is invalid.")
+                                print("Transaction not found.")
                             }
-                        } else {
-                            print("Transaction not found.")
                         }
+                    } else {
+                        print("Permission denied: You can only delete transactions from your own accounts.")
                     }
                 } else {
-                    print("Permission denied: You can only delete transactions from your own accounts.")
+                    print("Account does not exist.")
                 }
-            } else {
-                print("Account does not exist.")
             }
         }
     }
