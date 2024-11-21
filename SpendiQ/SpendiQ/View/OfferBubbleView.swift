@@ -1,9 +1,12 @@
+// Developed by Alonso Hernandez
+
 import SwiftUI
 
 struct OfferBubbleView: View {
     @ObservedObject var viewModel: OfferViewModel
     @ObservedObject var locationManager: LocationManager
     @State private var selectedOffer: Offer?
+    @ObservedObject private var reachability = ReachabilityManager.shared // Sprint 3: Singleton for CoreData Cache
 
     var body: some View {
         VStack {
@@ -19,8 +22,21 @@ struct OfferBubbleView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 20)
 
-            if viewModel.offers.isEmpty && viewModel.showNoOffersMessage {
-                // Display "No offers found" message after 6 seconds
+            if !reachability.isConnected {
+                // Sprint 3: Offline Note
+                Text("You are offline and won't see updated Offers for now.")
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.red)
+                    .cornerRadius(8)
+                    .padding(.bottom, 10)
+                    .transition(.opacity)
+            }
+
+            if viewModel.isLoading {
+                ProgressView("Loading offers...")
+                    .padding()
+            } else if viewModel.offers.isEmpty && viewModel.showNoOffersMessage {
                 VStack {
                     Image(systemName: "magnifyingglass")
                         .resizable()
@@ -33,40 +49,26 @@ struct OfferBubbleView: View {
                         .padding(.top, 10)
                 }
                 .padding(.top, 50)
-            } else if !viewModel.offers.isEmpty {
-                // Display offers immediately when found
+            } else {
+                // Display offers
                 ScrollView {
                     ForEach(viewModel.offers) { offer in
                         Button(action: {
                             selectedOffer = offer
                         }) {
-                            OfferCardView(offer: offer, locationManager: locationManager) // Pass locationManager here
+                            OfferCardView(offer: offer, locationManager: locationManager)
                                 .padding(.vertical, 8)
                         }
                     }
                 }
                 .padding(.horizontal)
-            } else {
-                // Display "No offers found" message after 6 seconds
-                VStack {
-                    Image(systemName: "magnifyingglass")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(.gray)
-                    Text("No stores were found near you, please try in another area.")
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 10)
-                }
-                .padding(.top, 50)
             }
         }
         .background(
             Group {
                 if let offer = selectedOffer {
                     NavigationLink(
-                        destination: OfferDetailView(offer: offer, locationManager: locationManager), // Pass locationManager here
+                        destination: OfferDetailView(offer: offer, locationManager: locationManager),
                         isActive: Binding<Bool>(
                             get: { selectedOffer != nil },
                             set: { _ in selectedOffer = nil }
@@ -76,14 +78,24 @@ struct OfferBubbleView: View {
                 }
             }
         )
-        .onAppear { }
-    }
-}
-
-struct OfferBubbleView_Previews: PreviewProvider {
-    static var previews: some View {
-        let locationManager = LocationManager()
-        let offerViewModel = OfferViewModel(locationManager: locationManager, mockData: false)
-        OfferBubbleView(viewModel: offerViewModel, locationManager: locationManager) // Pass locationManager here in the preview
+        .onAppear {
+            viewModel.shouldFetchOnAppear = false
+            if reachability.isConnected {
+                print("Online: Fetching offers if needed.")
+                viewModel.fetchOffers()
+            } else {
+                print("Offline: Loading cached offers.") // Sprint 3: Cache
+                viewModel.loadCachedOffers()
+            }
+        }
+        .onChange(of: reachability.isConnected) { isConnected in
+            print("Connectivity changed. Connected: \(isConnected)")
+            if isConnected {
+                viewModel.fetchOffers()
+            } else {
+                viewModel.loadCachedOffers() // Sprint 3: Cache Strategy 1 for ECS3
+            }
+        }
+        .animation(.easeInOut, value: reachability.isConnected)
     }
 }
