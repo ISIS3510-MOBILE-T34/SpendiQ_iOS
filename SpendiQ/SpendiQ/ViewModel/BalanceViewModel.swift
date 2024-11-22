@@ -13,7 +13,7 @@ import FirebaseAuth
 
 class BalanceViewModel: ObservableObject {
     @Published var balanceData: [(date: Date, balance: Double)] = []
-    private let db = Firestore.firestore()
+    private let db = FirestoreManager.shared.db
     var selectedTimeFrame: String = "1 Day"
     
     // Computed property to get the current user's UID
