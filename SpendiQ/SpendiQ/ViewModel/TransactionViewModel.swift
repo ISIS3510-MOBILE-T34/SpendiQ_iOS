@@ -129,6 +129,101 @@ class TransactionViewModel: ObservableObject {
                 }
             }
     }
+    
+    // Sprint 4 - Alonso: New View - Feature and BQ
+    func calculateLastThreeMonthsIncomeAndExpenses(completion: @escaping ([(String, Double, Double)]) -> Void) {
+        print("Sprint 4 - Alonso: Calculating income and expenses for the last three months...")
+
+        guard let userID = currentUserID else {
+            print("No authenticated user.")
+            completion([])
+            return
+        }
+
+        db.collection("accounts")
+            .whereField("user_id", isEqualTo: userID)
+            .getDocuments { (querySnapshot, error) in
+                if let error = error {
+                    print("Error retrieving accounts: \(error.localizedDescription)")
+                    completion([])
+                    return
+                }
+
+                guard let documents = querySnapshot?.documents else {
+                    print("No accounts found.")
+                    completion([])
+                    return
+                }
+
+                let group = DispatchGroup()
+                var results: [(String, Double, Double)] = []
+                let calendar = Calendar.current
+
+                // Get the last three months
+                let currentDate = Date()
+                let months = (0...2).map { offset -> (Int, Int, String) in
+                    let date = calendar.date(byAdding: .month, value: -offset, to: currentDate)!
+                    let month = calendar.component(.month, from: date)
+                    let year = calendar.component(.year, from: date)
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "MMMM yyyy"
+                    return (month, year, formatter.string(from: date))
+                }
+
+                var monthlyTotals: [String: (Double, Double)] = [:]
+
+                for (month, year, monthName) in months {
+                    monthlyTotals[monthName] = (0, 0)
+                }
+
+                for document in documents {
+                    let accountID = document.documentID
+
+                    group.enter()
+                    self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, transactionError) in
+                        if let transactionError = transactionError {
+                            print("Error retrieving transactions for account \(accountID): \(transactionError.localizedDescription)")
+                            group.leave()
+                            return
+                        }
+
+                        for transactionDoc in transactionSnapshot?.documents ?? [] {
+                            if let transactionType = transactionDoc.data()["transactionType"] as? String,
+                               let amount = transactionDoc.data()["amount"] as? Double,
+                               let dateTime = transactionDoc.data()["dateTime"] as? Timestamp {
+                                let transactionDate = dateTime.dateValue()
+                                let transactionMonth = calendar.component(.month, from: transactionDate)
+                                let transactionYear = calendar.component(.year, from: transactionDate)
+
+                                for (month, year, monthName) in months {
+                                    if transactionMonth == month && transactionYear == year {
+                                        if transactionType == "Income" {
+                                            monthlyTotals[monthName]?.0 += amount
+                                        } else if transactionType == "Expense" {
+                                            monthlyTotals[monthName]?.1 += amount
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        group.leave()
+                    }
+                }
+
+                group.notify(queue: .main) {
+                    results = months.compactMap { month, year, monthName in
+                        if let totals = monthlyTotals[monthName] {
+                            return (monthName, totals.0, totals.1)
+                        }
+                        return nil
+                    }
+
+                    print("Sprint 4 - Alonso: Fetched last three months' totals: \(results)")
+                    completion(results)
+                }
+            }
+    }
+
 
     init() {
         // Load transactions from cache

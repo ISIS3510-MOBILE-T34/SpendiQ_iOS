@@ -41,16 +41,36 @@ struct OfferDetailView: View {
                     .cornerRadius(8)
                     .padding(.bottom, 10)
             }
-
+            
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Title
-                    Text("Special Offers Near You")
-                        .font(.title)
-                        .fontWeight(.bold)
+                    if offer.featured {
+                        HStack(spacing: 0) {
+                            Text("We found a ")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            Text("Featured Offer")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.yellow)
+                            Text(" near you!")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                        }
                         .padding(.top, 15)
-                        .padding(.bottom, 15)
+                        .padding(.bottom, 5)
                         .frame(maxWidth: .infinity, alignment: .center)
+                    } else {
+                        Text("We Found an Offer Near You")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .padding(.top, 15)
+                            .padding(.bottom, 5)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
 
                     HStack {
                         // Shop Image with ImageCacheManager
@@ -66,9 +86,10 @@ struct OfferDetailView: View {
                                     loadImage()
                                 }
                         }
-
+                        
                         // Shop Name and Distance
                         VStack(alignment: .leading, spacing: 4) {
+                            
                             Text(offer.placeName)
                                 .font(.headline)
                             
