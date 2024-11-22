@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>&quot;We use Face ID to securely log you into your account.&quot;</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>&quot;We use notifications to alert you of offers near you.&quot;</string>
 	<key>API_KEY</key>
 	<string>AIzaSyDyp4HWst_42fs9NiCaLd2xYmiIRMftVjI</string>
 	<key>GCM_SENDER_ID</key>
