@@ -1,1 +1,12 @@
 .env
+SpendiQ/SpendiQ.xcodeproj/project.xcworkspace/xcuserdata/
+# Ignore Xcode user interface state files
+**/*.xcuserstate
+
+# Ignore Xcode user-specific workspace data
+**/*.xcuserstate
+**/*.xcuserdata/
+
+# Ignore other common Xcode-related files
+*.xcworkspace
+*.xcodeproj/project.xcworkspace/xcuserdata/
