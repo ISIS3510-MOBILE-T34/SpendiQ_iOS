@@ -97,7 +97,8 @@ class OfferViewModel: ObservableObject {
                 return
             }
 
-            var fetchedOffers: [Offer] = []
+            var featuredOffers: [Offer] = []
+            var nonFeaturedOffers: [Offer] = []
             
             for doc in documents {
                 let data = doc.data()
@@ -107,7 +108,10 @@ class OfferViewModel: ObservableObject {
                     let recommendationReason = data["recommendationReason"] as? String,
                     let shopImage = data["shopImage"] as? String,
                     let latitude = data["latitude"] as? Double,
-                    let longitude = data["longitude"] as? Double
+                    let longitude = data["longitude"] as? Double,
+                    let isFeatured = data["featured"] as? Bool, // Sprint 4: Checking featured attribute
+                    let viewCount = data["viewCount"] as? Int32
+                
                 else {
                     print("Incomplete offer data for document ID: \(doc.documentID)")
                     continue
@@ -126,25 +130,59 @@ class OfferViewModel: ObservableObject {
                         latitude: latitude,
                         longitude: longitude,
                         distance: Int(distanceInMeters),
-                        shop: ""
+                        shop: "",
+                        featured: isFeatured,
+                        viewCount: viewCount
                     )
-                    if !self.offers.contains(offer) {
-                        fetchedOffers.append(offer)
-                    }
+                    
+                    if isFeatured {
+                               featuredOffers.append(offer)
+                           } else {
+                               nonFeaturedOffers.append(offer)
+                           }
                 }
             }
             
+            // Sprint4: Sorting featured offers alphabetically
+            featuredOffers.sort { $0.placeName < $1.placeName }
+
+            // Sprint4: Combining featured and non-featured offers
+            let sortedOffers = featuredOffers + nonFeaturedOffers
+            
             DispatchQueue.main.async {
-                print("Fetched \(fetchedOffers.count) offers from Firebase.")
-                self.removeOldOfferImages(newOffers: fetchedOffers) // Sprint 3: Removing old images
-                self.offers = fetchedOffers
-                self.cacheOffers(fetchedOffers)
+                print("Fetched \(sortedOffers.count) offers from Firebase.")
+                self.removeOldOfferImages(newOffers: sortedOffers) // Sprint 3: Removing old images
+                self.offers = sortedOffers
+                self.cacheOffers(sortedOffers)
                 self.isLoading = false
                 self.noOffersTimer?.invalidate()
                 self.showNoOffersMessage = self.offers.isEmpty
             }
         }
     }
+    
+    // Sprint 4: BQ type 4 - Counting number of visits to the offer to show to third parties.
+    func incrementViewCount(for offer: Offer) {
+        guard let offerId = offer.id else {
+            print("Error: Offer ID is missing.") // Debug log
+            return
+        }
+
+        print("Incrementing view count for offer ID: \(offerId)") // Debug log
+
+        let offerRef = db.collection("offers").document(offerId)
+        offerRef.updateData([
+            "viewCount": FieldValue.increment(Int64(1))
+        ]) { error in
+            if let error = error {
+                print("Error incrementing view count for offer \(offerId): \(error.localizedDescription)")
+            } else {
+                print("View count successfully incremented for offer \(offerId).")
+            }
+        }
+    }
+
+
 
     private func cacheOffers(_ offers: [Offer]) { // Sprint 3: Caching offers to handle the ECS3
         print("Caching \(offers.count) offers to Core Data...")
@@ -189,7 +227,9 @@ class OfferViewModel: ObservableObject {
                     latitude: entity.latitude,
                     longitude: entity.longitude,
                     distance: Int(entity.distance),
-                    shop: ""
+                    shop: "",
+                    featured: entity.featured,
+                    viewCount: entity.viewCount
                 )
             }
             

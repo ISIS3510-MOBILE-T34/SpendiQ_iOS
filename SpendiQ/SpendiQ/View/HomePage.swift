@@ -48,9 +48,14 @@ struct HomePage: View {
                 )
                 .padding(.bottom, 12)
                 
-                Text("Movements")
-                    .font(.custom("SF Pro", size: 19))
-                    .fontWeight(.regular)
+                HStack {
+                      Text("Movements")
+                          .font(.custom("SF Pro", size: 19))
+                          .fontWeight(.regular)
+                          .padding(.leading)
+
+                      Spacer()
+                  }
                 
                 ForEach(viewModel.transactionsByDay.keys.sorted().reversed(), id: \.self) { day in
                     DayResume(viewModel: viewModel, day: day)
