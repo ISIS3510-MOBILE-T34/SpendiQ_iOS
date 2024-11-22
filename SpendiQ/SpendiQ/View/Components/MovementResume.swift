@@ -17,9 +17,19 @@ struct MovementResume: View {
             .padding(.leading,16)
             
             VStack (alignment:.leading, spacing: 4){
-                Text(transaction.transactionName)
-                    .fontWeight(.regular)
                 
+                HStack{
+
+                    Text(transaction.transactionName)
+                        .fontWeight(.regular)
+                    
+                    if transaction.amountAnomaly {
+                        Image(systemName: "creditcard.fill")
+                            .foregroundStyle(.red)
+                            .font(.system(size: 12))
+                    }
+                }
+               
                 HStack{
                     Text(viewModel.accounts[transaction.accountID] ?? "Loading...")
                         .fontWeight(.light)
@@ -34,6 +44,7 @@ struct MovementResume: View {
                 }
                 
             }
+            
 
             Spacer()
             
