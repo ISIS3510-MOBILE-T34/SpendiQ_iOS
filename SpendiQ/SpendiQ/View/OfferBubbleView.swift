@@ -50,17 +50,22 @@ struct OfferBubbleView: View {
                 }
                 .padding(.top, 50)
             } else {
-                // Display offers
+                // Display offers	
                 ScrollView {
                     ForEach(viewModel.offers) { offer in
                         Button(action: {
+                            print("Button clicked for offer ID: \(offer.id ?? "Unknown")")
                             selectedOffer = offer
+                            viewModel.incrementViewCount(for: offer) // Increment viewCount
                         }) {
                             OfferCardView(offer: offer, locationManager: locationManager)
                                 .padding(.vertical, 8)
+                                .cornerRadius(8)
+                                .padding(.bottom, offer.featured ? 8 : 0)
                         }
                     }
                 }
+
                 .padding(.horizontal)
             }
         }

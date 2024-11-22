@@ -12,6 +12,15 @@ struct OfferCardView: View {
             VStack(alignment: .leading) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
+                        
+                        if offer.featured {
+                            Text("Featured")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.yellow)
+                                .padding(.bottom, 4)
+                        }
+                        
                         Text(offer.placeName)
                             .font(.headline)
                             .multilineTextAlignment(.leading)
@@ -52,7 +61,11 @@ struct OfferCardView: View {
             .padding()
             .background(Color.white)
             .cornerRadius(12)
-            .shadow(radius: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(offer.featured ? Color.yellow : Color.clear, lineWidth: 4) // Gold border for featured
+            )
+            .shadow(color: .gray.opacity(0.2), radius: 4, x: 0, y: 2)
         }
     }
     
