@@ -164,33 +164,84 @@ class OfferViewModel: ObservableObject {
     // Sprint 4: BQ type 4 - Counting number of visits to the offer to show to third parties.
     func incrementViewCount(for offer: Offer) {
         guard let offerId = offer.id else {
-            print("Error: Offer ID is missing.") // Debug log
+            print("Sprint 4 - Alonso: Error: Offer ID is missing.")
             return
         }
-
-        print("Incrementing view count for offer ID: \(offerId)") // Debug log
-
-        let offerRef = db.collection("offers").document(offerId)
-        offerRef.updateData([
+        
+        if !ReachabilityManager.shared.isConnected {
+            // Offline: Cache the increment locally
+            print("Sprint 4 - Alonso: Offline. Caching viewCount increment locally for \(offerId).")
+            cacheViewCountIncrement(for: offerId)
+            return
+        }
+        
+        // Online: Update Firebase
+        db.collection("offers").document(offerId).updateData([
             "viewCount": FieldValue.increment(Int64(1))
         ]) { error in
             if let error = error {
-                print("Error incrementing view count for offer \(offerId): \(error.localizedDescription)")
+                print("Sprint 4 - Alonso: Error incrementing viewCount for \(offerId): \(error.localizedDescription)")
             } else {
-                print("View count successfully incremented for offer \(offerId).")
+                print("Sprint 4 - Alonso: ViewCount incremented successfully for \(offerId).")
             }
+        }
+    }
+    
+    // Sprint 4 - Alonso: Caching Strategy for New BQ Type 4
+    private func cacheViewCountIncrement(for offerId: String) {
+        let fetchRequest: NSFetchRequest<OfferEntity> = OfferEntity.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", offerId)
+        
+        do {
+            if let offerEntity = try context.fetch(fetchRequest).first {
+                offerEntity.viewCount += 1
+                try context.save()
+                print("Sprint 4 - Alonso: Cached viewCount increment for \(offerId).")
+            }
+        } catch {
+            print("Sprint 4 - Alonso: Error caching viewCount increment: \(error)")
+        }
+    }
+
+    // Sprint 4 - Alonso: Caching Strategy for New BQ Type 4
+    // Incrementing the amount of views for each updated offer which was stored locally
+    func syncCachedViewCountIncrements() {
+        guard ReachabilityManager.shared.isConnected else { return }
+
+        let fetchRequest: NSFetchRequest<OfferEntity> = OfferEntity.fetchRequest()
+        
+        do {
+            let cachedEntities = try context.fetch(fetchRequest)
+            for entity in cachedEntities where entity.viewCount > 0 {
+                guard let offerId = entity.id else { continue }
+                let increment = Int(entity.viewCount)
+                
+                db.collection("offers").document(offerId).updateData([
+                    "viewCount": FieldValue.increment(Int64(increment))
+                ]) { error in
+                    if let error = error {
+                        print("Sprint 4 - Alonso: Error syncing viewCount for \(offerId): \(error.localizedDescription)")
+                    } else {
+                        print("Sprint 4 - Alonso: Synced viewCount for \(offerId).")
+                        entity.viewCount = 0 // Reset local increment
+                    }
+                }
+            }
+            
+            try context.save()
+        } catch {
+            print("Sprint 4 - Alonso: Error syncing cached viewCounts: \(error)")
         }
     }
 
 
-
-    private func cacheOffers(_ offers: [Offer]) { // Sprint 3: Caching offers to handle the ECS3
-        print("Caching \(offers.count) offers to Core Data...")
+    private func cacheOffers(_ offers: [Offer]) {
+        print("Sprint 4 - Alonso: Caching offers including featured and viewCount attributes...")
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = OfferEntity.fetchRequest()
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
         
         do {
-            try context.execute(deleteRequest)
+            try context.execute(deleteRequest) // Clear old cache
             
             for offer in offers {
                 let offerEntity = OfferEntity(context: context)
@@ -202,17 +253,19 @@ class OfferViewModel: ObservableObject {
                 offerEntity.latitude = offer.latitude
                 offerEntity.longitude = offer.longitude
                 offerEntity.distance = Int16(offer.distance)
+                offerEntity.featured = offer.featured // Sprint 4 - Alonso: Cache featured attribute
+                offerEntity.viewCount = Int32(offer.viewCount) // Sprint 4 - Alonso: Cache viewCount
             }
             
             try context.save()
-            print("Successfully cached offers.")
+            print("Sprint 4 - Alonso: Offers cached successfully.")
         } catch {
-            print("Error caching offers: \(error)")
+            print("Sprint 4 - Alonso: Error caching offers: \(error)")
         }
     }
 
     func loadCachedOffers() {
-        print("Loading cached offers from Core Data...")
+        print("Sprint 4 - Alonso: Loading cached offers and ensuring sorting order...")
         let fetchRequest: NSFetchRequest<OfferEntity> = OfferEntity.fetchRequest()
         
         do {
@@ -229,20 +282,34 @@ class OfferViewModel: ObservableObject {
                     distance: Int(entity.distance),
                     shop: "",
                     featured: entity.featured,
-                    viewCount: entity.viewCount
+                    viewCount: Int32(entity.viewCount)
                 )
             }
-            
+
+            // Sprint 4 - Alonso: Sorting cached offers
+            let sortedOffers = cachedOffers.sorted { lhs, rhs in
+                if lhs.featured && !rhs.featured {
+                    return true // Featured offers come first
+                } else if !lhs.featured && rhs.featured {
+                    return false
+                } else if lhs.featured && rhs.featured {
+                    return lhs.placeName < rhs.placeName
+                } else {
+                    return lhs.placeName < rhs.placeName
+                }
+            }
+
             DispatchQueue.main.async {
-                print("Loaded \(cachedOffers.count) cached offers.")
-                self.offers = cachedOffers
+                print("Sprint 4 - Alonso: Cached offers loaded and sorted successfully.")
+                self.offers = sortedOffers
                 self.isLoading = false
-                self.showNoOffersMessage = cachedOffers.isEmpty
+                self.showNoOffersMessage = sortedOffers.isEmpty
             }
         } catch {
-            print("Error loading cached offers: \(error)")
+            print("Sprint 4 - Alonso: Error loading and sorting cached offers: \(error)")
         }
     }
+
     
     deinit {
         fetchOffersTimer?.invalidate()

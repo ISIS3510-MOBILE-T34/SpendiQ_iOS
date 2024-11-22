@@ -6,7 +6,7 @@ struct HomePage: View {
     @State private var CurrentBalance: Int = 0
     @State private var totalIncome: Double = 0
     @State private var totalExpenses: Double = 0
-    @ObservedObject private var viewModel = TransactionViewModel()
+    @ObservedObject var transactionViewModel: TransactionViewModel
     @ObservedObject private var bankAccountViewModel = BankAccountViewModel()
 
     var body: some View {
@@ -19,10 +19,10 @@ struct HomePage: View {
                     Text("Total Balance")
                         .font(.custom("SF Pro", size: 19))
                         .fontWeight(.regular)
-                        .padding(.leading,86)
+                        .padding(.leading, 86)
                     
                     Image(systemName: "bell.fill")
-                        .padding(.leading,50)
+                        .padding(.leading, 50)
                 }
                 
                 Spacer()
@@ -35,30 +35,32 @@ struct HomePage: View {
                 
                 GraphBox()
                     .frame(height: 264)
-                    .padding(.bottom,12)
+                    .padding(.bottom, 12)
                 
                 Divider()
                     .frame(width: 361)
                 
-                // Sprint 3 - Alonso: Add OverviewView
-                OverviewView(
-                    totalIncome: totalIncome,
-                    totalExpenses: totalExpenses,
-                    monthName: DateFormatter().monthSymbols[Calendar.current.component(.month, from: Date()) - 1]
-                )
-                .padding(.bottom, 12)
+                NavigationLink(destination: ThreeMonthOverviewView(viewModel: transactionViewModel)) {
+                    OverviewView(
+                        totalIncome: totalIncome,
+                        totalExpenses: totalExpenses,
+                        monthName: DateFormatter().monthSymbols[Calendar.current.component(.month, from: Date()) - 1], viewModel: transactionViewModel
+                    )
+                    .padding(.bottom, 12)
+                }
                 
                 HStack {
-                      Text("Movements")
-                          .font(.custom("SF Pro", size: 19))
-                          .fontWeight(.regular)
-                          .padding(.leading)
-
-                      Spacer()
-                  }
+                    Text("Movements")
+                        .font(.custom("SF Pro", size: 19))
+                        .fontWeight(.bold)
+                        .foregroundColor(.black)
+                        .padding(.leading)
+                    
+                    Spacer()
+                }
                 
-                ForEach(viewModel.transactionsByDay.keys.sorted().reversed(), id: \.self) { day in
-                    DayResume(viewModel: viewModel, day: day)
+                ForEach(transactionViewModel.transactionsByDay.keys.sorted().reversed(), id: \.self) { day in
+                    DayResume(viewModel: transactionViewModel, day: day)
                         .padding(.bottom, 0)
                 }
                 
@@ -67,11 +69,10 @@ struct HomePage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.white)
             .onAppear {
-                viewModel.getTransactionsForAllAccounts()
-                bankAccountViewModel.getBankAccounts()
+                transactionViewModel.getTransactionsForAllAccounts()
 
-                // Sprint 3 - Alonso: Fetch income and expenses for the current month using TransactionViewModel
-                viewModel.calculateMonthlyIncomeAndExpenses { income, expenses in
+                // Fetch income and expenses for the current month
+                transactionViewModel.calculateMonthlyIncomeAndExpenses { income, expenses in
                     totalIncome = income
                     totalExpenses = expenses
                 }

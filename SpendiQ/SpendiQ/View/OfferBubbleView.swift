@@ -97,6 +97,8 @@ struct OfferBubbleView: View {
             print("Connectivity changed. Connected: \(isConnected)")
             if isConnected {
                 viewModel.fetchOffers()
+                print("Sprint 4 - Alonso: Online. Syncing cached viewCounts...")
+                viewModel.syncCachedViewCountIncrements()
             } else {
                 viewModel.loadCachedOffers() // Sprint 3: Cache Strategy 1 for ECS3
             }
