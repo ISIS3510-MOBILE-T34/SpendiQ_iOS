@@ -1,1 +1,13 @@
 .env
+# Ignore Xcode user interface state files
+**/*.xcuserstate
+
+# Ignore Xcode user-specific workspace data
+**/*.xcuserstate
+**/*.xcuserdata/
+
+# Ignore other common Xcode-related files
+*.xcworkspace
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+*.xcuserstate

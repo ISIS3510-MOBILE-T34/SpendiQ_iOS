@@ -6,9 +6,10 @@ struct ContentView: View {
     @State private var selectedTab: String = "Home"
     @State private var showOffersList: Bool = false
 
-    // Only instantiate LocationManager once for PromosPage
+    // Instantiate view models
     @StateObject private var locationManager = LocationManager()
-    @StateObject private var userViewModel = UserViewModel() // Initialize without mockData for production
+    @StateObject private var userViewModel = UserViewModel()
+    @StateObject private var transactionViewModel = TransactionViewModel()
 
     var body: some View {
         NavigationView {
@@ -18,10 +19,9 @@ struct ContentView: View {
                     Header(viewModel: userViewModel, selectedTab: $selectedTab)
                 }
 
-                // Switch between different tabs/pages
                 switch selectedTab {
                 case "Home":
-                    HomePage()
+                    HomePage(transactionViewModel: transactionViewModel)
                         .onAppear {
                             NotificationManager.shared.requestNotificationPermission()
                         }
@@ -53,6 +53,7 @@ struct ContentView: View {
             }
         }
         .environmentObject(userViewModel)
+        .environmentObject(transactionViewModel) // Share TransactionViewModel
     }
 }
 
@@ -61,5 +62,6 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
             .environmentObject(AppState())
             .environmentObject(UserViewModel(mockData: true))
+            .environmentObject(TransactionViewModel()) // Add TransactionViewModel for previews
     }
 }
