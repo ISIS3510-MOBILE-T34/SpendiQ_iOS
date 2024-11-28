@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct DayResumeTitle: View {
-    @State var Expenses: Int = 0
-    @State var Incomes: Int = 0
-    @State var Day: String = "Sep 13, 2024"
+    var Expenses: Float = 0
+    var Incomes: Float = 0
+    var Day: String = "Sep 13, 2024"
     var body: some View {
         Divider()
             .padding(.leading,16)

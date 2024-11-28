@@ -8,9 +8,21 @@ struct HomePage: View {
     @State private var totalExpenses: Double = 0
     @ObservedObject var transactionViewModel: TransactionViewModel
     @ObservedObject private var bankAccountViewModel = BankAccountViewModel()
+    @State private var selectedAccountID: String = ""
 
     var body: some View {
         VStack {
+            // Selector de cuentas
+            Picker("Seleccione una cuenta", selection: $selectedAccountID) {
+                Text("Todas las cuentas").tag("")
+                ForEach(bankAccountViewModel.accounts, id: \.id) { account in
+                    Text(account.name).tag(account.id ?? "")
+                }
+            }
+            .pickerStyle(MenuPickerStyle())
+            .onChange(of: selectedAccountID) { newValue in
+                transactionViewModel.getTransactionsForAllAccounts(accountID: selectedAccountID)
+            }
             ScrollView {
                 Spacer()
                     .frame(height: 53)
@@ -69,7 +81,7 @@ struct HomePage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.white)
             .onAppear {
-                transactionViewModel.getTransactionsForAllAccounts()
+                transactionViewModel.getTransactionsForAllAccounts(accountID: selectedAccountID)
 
                 // Fetch income and expenses for the current month
                 transactionViewModel.calculateMonthlyIncomeAndExpenses { income, expenses in

@@ -6,12 +6,13 @@ struct DayResume: View {
     @ObservedObject var viewModel: TransactionViewModel
     var day: String
 
-    var totalExpenses: Int {
-        viewModel.transactionsByDay[day]?.filter { $0.transactionType == "Expense" }.reduce(0) { $0 + Int($1.amount) } ?? 0
+    // Actualiza los cálculos para usar solo las transacciones filtradas
+    var totalExpenses: Float {
+        viewModel.transactionsByDay[day]?.filter { $0.transactionType == "Expense" }.reduce(0) { $0 + $1.amount } ?? 0
     }
 
-    var totalIncomes: Int {
-        viewModel.transactionsByDay[day]?.filter { $0.transactionType == "Income" }.reduce(0) { $0 + Int($1.amount) } ?? 0
+    var totalIncomes: Float {
+        viewModel.transactionsByDay[day]?.filter { $0.transactionType == "Income" }.reduce(0) { $0 + $1.amount } ?? 0
     }
 
     var body: some View {
