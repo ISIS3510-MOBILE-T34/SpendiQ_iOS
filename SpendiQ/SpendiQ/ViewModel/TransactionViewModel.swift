@@ -233,70 +233,126 @@ class TransactionViewModel: ObservableObject {
     }
 
     // Fetches transactions for all accounts belonging to the current user
-    func getTransactionsForAllAccounts() {
+    func getTransactionsForAllAccounts(accountID: String = "") {
         guard let userID = currentUserID else {
             print("No authenticated user.")
             return
         }
 
-        db.collection("accounts")
-            .whereField("user_id", isEqualTo: userID)
-            .getDocuments { (querySnapshot, error) in
-                if let error = error {
-                    print("Error retrieving accounts: \(error.localizedDescription)")
-                } else {
-                    var transactionsTemp: [Transaction] = []
-                    var transactionsByDayTemp: [String: [Transaction]] = [:]
-                    var totalByDayTemp: [String: Float] = [:]
+        if !accountID.isEmpty {
+            // Obtener transacciones de una cuenta específica
+            getTransactionsForAccount(accountID: accountID)
+        } else {
+            // Obtener transacciones de todas las cuentas del usuario
+            let accountQuery = db.collection("accounts").whereField("user_id", isEqualTo: userID)
+            accountQuery.getDocuments { (querySnapshot, error) in
+                self.processAccounts(querySnapshot: querySnapshot, error: error)
+            }
+        }
+    }
+    
+    //Sprint 3 JD
+    func getTransactionsForAccount(accountID: String) {
+        self.getAccountName(accountID: accountID)
+        db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
+            if let error = error {
+                print("Error retrieving transactions: \(error.localizedDescription)")
+            } else {
+                var transactionsTemp: [Transaction] = []
+                var transactionsByDayTemp: [String: [Transaction]] = [:]
+                var totalByDayTemp: [String: Float] = [:]
 
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
 
-                    let group = DispatchGroup()
+                for transactionDoc in transactionSnapshot?.documents ?? [] {
+                    var transaction = try? transactionDoc.data(as: Transaction.self)
+                    transaction?.id = transactionDoc.documentID
+                    transaction?.accountID = accountID
 
-                    for document in querySnapshot?.documents ?? [] {
-                        let accountID = document.documentID
-                        self.getAccountName(accountID: accountID)
+                    if let transaction = transaction {
+                        transactionsTemp.append(transaction)
 
-                        group.enter()
-                        self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
-                            if let error = error {
-                                print("Error retrieving transactions: \(error.localizedDescription)")
-                            } else {
-                                for transactionDoc in transactionSnapshot?.documents ?? [] {
-                                    var transaction = try? transactionDoc.data(as: Transaction.self)
-                                    transaction?.id = transactionDoc.documentID
-                                    transaction?.accountID = accountID
+                        let day = dateFormatter.string(from: transaction.dateTime)
 
-                                    if let transaction = transaction {
-                                        transactionsTemp.append(transaction)
-
-                                        let day = dateFormatter.string(from: transaction.dateTime)
-
-                                        if transactionsByDayTemp[day] != nil {
-                                            transactionsByDayTemp[day]?.append(transaction)
-                                        } else {
-                                            transactionsByDayTemp[day] = [transaction]
-                                        }
-
-                                        totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
-                                    }
-                                }
-                            }
-                            group.leave()
+                        if transactionsByDayTemp[day] != nil {
+                            transactionsByDayTemp[day]?.append(transaction)
+                        } else {
+                            transactionsByDayTemp[day] = [transaction]
                         }
-                    }
 
-                    group.notify(queue: .main) {
-                        self.transactions = transactionsTemp
-                        self.transactionsByDay = transactionsByDayTemp
-                        self.totalByDay = totalByDayTemp
-                        print("Loaded transactions for all accounts.")
-                        // Save transactions to cache
-                        self.saveTransactionsToCache()
+                        totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
                     }
                 }
+
+                DispatchQueue.main.async {
+                    self.transactions = transactionsTemp
+                    self.transactionsByDay = transactionsByDayTemp
+                    self.totalByDay = totalByDayTemp
+                    print("Loaded transactions for selected account.")
+                    // Guarda las transacciones en caché
+                    self.saveTransactionsToCache()
+                }
             }
+        }
+    }
+    
+    // Sprint 3 JD
+    func processAccounts(querySnapshot: QuerySnapshot?, error: Error?) {
+        if let error = error {
+            print("Error retrieving accounts: \(error.localizedDescription)")
+        } else {
+            var transactionsTemp: [Transaction] = []
+            var transactionsByDayTemp: [String: [Transaction]] = [:]
+            var totalByDayTemp: [String: Float] = [:]
+
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+
+            let group = DispatchGroup()
+
+            for document in querySnapshot?.documents ?? [] {
+                let accountID = document.documentID
+                self.getAccountName(accountID: accountID)
+
+                group.enter()
+                self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, error) in
+                    if let error = error {
+                        print("Error retrieving transactions: \(error.localizedDescription)")
+                    } else {
+                        for transactionDoc in transactionSnapshot?.documents ?? [] {
+                            var transaction = try? transactionDoc.data(as: Transaction.self)
+                            transaction?.id = transactionDoc.documentID
+                            transaction?.accountID = accountID
+
+                            if let transaction = transaction {
+                                transactionsTemp.append(transaction)
+
+                                let day = dateFormatter.string(from: transaction.dateTime)
+
+                                if transactionsByDayTemp[day] != nil {
+                                    transactionsByDayTemp[day]?.append(transaction)
+                                } else {
+                                    transactionsByDayTemp[day] = [transaction]
+                                }
+
+                                totalByDayTemp[day] = (totalByDayTemp[day] ?? 0.0) + transaction.amount
+                            }
+                        }
+                    }
+                    group.leave()
+                }
+            }
+
+            group.notify(queue: .main) {
+                self.transactions = transactionsTemp
+                self.transactionsByDay = transactionsByDayTemp
+                self.totalByDay = totalByDayTemp
+                print("Loaded transactions for all accounts.")
+                // Guarda las transacciones en caché
+                self.saveTransactionsToCache()
+            }
+        }
     }
 
     // Adds a new transaction to a specific account
