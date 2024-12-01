@@ -6,6 +6,10 @@
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="user_id" optional="YES" attributeType="String"/>
     </entity>
+    <entity name="BalanceDataEntity" representedClassName="BalanceDataEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="balance" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
     <entity name="TransactionEntity" representedClassName="TransactionEntity" syncable="YES" codeGenerationType="class">
         <attribute name="accountID" optional="YES" attributeType="String"/>
         <attribute name="amount" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>

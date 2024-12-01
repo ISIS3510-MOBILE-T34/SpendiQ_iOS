@@ -21,7 +21,6 @@ struct TabBar: View {
                         selectedTab = "Promos"
                     }
                 
-                
                 Icon(IconName: "plus.circle.fill", IconText: "New", isSelected: selectedTab == "New", isSpecial: true)
                     .onTapGesture {
                         showSheet.toggle()
@@ -32,7 +31,6 @@ struct TabBar: View {
                             .presentationDetents([.large])
                             .presentationDragIndicator(.visible)
                     }
-                
                 
                 Icon(IconName: "creditcard", IconText: "Accounts", isSelected: selectedTab == "Accounts")
                     .onTapGesture {
@@ -57,6 +55,10 @@ struct Icon: View {
     var isSpecial: Bool = false
     
     var body: some View {
+        // Variables para evitar cálculos redundantes
+        let circleColor: Color = isSelected || isSpecial ? .white : .black
+        let offsetValue: CGFloat = isSelected || isSpecial ? -15 : 0
+        
         VStack(spacing: 4) {
             ZStack {
                 if isSelected {
@@ -84,8 +86,8 @@ struct Icon: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 30, height: 30)
-                    .foregroundColor(isSelected || isSpecial ? .white : .black)
-                    .offset(y: isSelected || isSpecial ? -15 : 0)
+                    .foregroundColor(circleColor)
+                    .offset(y: offsetValue)
             }
             .frame(minWidth: 44, minHeight: 44)
             

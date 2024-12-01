@@ -6,7 +6,7 @@ struct EditTransactionForm: View {
     @State private var transactionName: String = ""
     @State private var amountText: String = ""
     @State private var selectedAccountID: String = ""
-    @State private var selectedEmoji: String = ""
+    @State private var selectedEmoji: String = "💰"
     @State private var selectedDateTime: Date = Date()
     @FocusState private var isEmojiFieldFocused: Bool
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
@@ -41,7 +41,7 @@ struct EditTransactionForm: View {
                         Circle()
                             .frame(width: 100, height: 100)
                             .foregroundColor(.primarySpendiq)
-                        Text(selectedEmoji.isEmpty ? "🙂" : selectedEmoji)
+                        Text(selectedEmoji)
                             .font(.system(size: 58))
                     }
                 }
@@ -199,8 +199,6 @@ struct EditTransactionForm: View {
                     amountText = String(format: "%.2f", transactionItem.amount)
                     selectedAccountID = transactionItem.accountID
                     selectedDateTime = transactionItem.dateTime
-                    selectedEmoji = selectEmoji(for: transactionType)
-                } else {
                     selectedEmoji = selectEmoji(for: transactionType)
                 }
             }
