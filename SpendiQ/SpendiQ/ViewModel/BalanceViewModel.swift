@@ -1,209 +1,173 @@
-//
-//  BalanceViewModel.swift
-//  SpendiQ
-//
-//  Created by Juan Salguero on 7/11/24.
-//
-
-// BalanceViewModel.swift
-
 import Foundation
-import FirebaseFirestore
-import FirebaseAuth
+import CoreData
 
 class BalanceViewModel: ObservableObject {
     @Published var balanceData: [(date: Date, balance: Double)] = []
-    private let db = FirestoreManager.shared.db
+    private let context = PersistenceController.shared.container.viewContext
     var selectedTimeFrame: String = "1 Day"
     
-    // Computed property to get the current user's UID
-    private var currentUserID: String? {
-        return Auth.auth().currentUser?.uid
+    init() {
+        loadCachedBalanceData()
+        fetchBalanceData(timeFrame: selectedTimeFrame)
     }
     
-    // Fetches transactions and calculates cumulative balance over time
+    // MARK: - Métodos de caché
+    
+    private func loadCachedBalanceData() {
+        let fetchRequest: NSFetchRequest<BalanceDataEntity> = BalanceDataEntity.fetchRequest()
+        do {
+            let cachedDataEntities = try context.fetch(fetchRequest)
+            let cachedBalanceData = cachedDataEntities.map { entity in
+                (date: entity.date ?? Date(), balance: entity.balance)
+            }
+            self.balanceData = cachedBalanceData
+            print("BalanceViewModel: Datos cargados desde la caché.")
+        } catch {
+            print("Error al cargar balanceData desde la caché: \(error.localizedDescription)")
+        }
+    }
+    
+    private func saveBalanceDataToCache() {
+        // Eliminar datos anteriores
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = BalanceDataEntity.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        do {
+            try context.execute(deleteRequest)
+        } catch {
+            print("Error al eliminar balanceData antiguo de la caché: \(error.localizedDescription)")
+        }
+        
+        // Guardar nuevos datos
+        for dataPoint in balanceData {
+            let entity = BalanceDataEntity(context: context)
+            entity.date = dataPoint.date
+            entity.balance = dataPoint.balance
+        }
+        
+        saveContext()
+        print("BalanceViewModel: Datos guardados en la caché.")
+    }
+    
+    private func saveContext() {
+        do {
+            try context.save()
+        } catch {
+            print("Error al guardar el contexto: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Funciones principales
+    
     func fetchBalanceData(timeFrame: String) {
         self.selectedTimeFrame = timeFrame
-        guard let userID = currentUserID else {
-            print("No authenticated user.")
-            return
-        }
         
-        // Define the start date based on the selected time frame
+        // Obtener transacciones desde la caché (TransactionEntity)
+        let fetchRequest: NSFetchRequest<TransactionEntity> = TransactionEntity.fetchRequest()
         let calendar = Calendar.current
-        var startDate: Date?
+        var predicates: [NSPredicate] = []
         
+        // Definir el predicado según el marco de tiempo seleccionado
         switch timeFrame {
         case "1 Day":
-            startDate = calendar.startOfDay(for: Date())
+            let startOfDay = calendar.startOfDay(for: Date())
+            let datePredicate = NSPredicate(format: "dateTime >= %@", startOfDay as NSDate)
+            predicates.append(datePredicate)
         case "Max":
-            startDate = nil // Fetch all data
+            // No se aplica filtro de fecha
+            break
         default:
-            startDate = calendar.startOfDay(for: Date())
+            let startOfDay = calendar.startOfDay(for: Date())
+            let datePredicate = NSPredicate(format: "dateTime >= %@", startOfDay as NSDate)
+            predicates.append(datePredicate)
         }
         
-        // Fetch accounts belonging to the current user
-        db.collection("accounts")
-            .whereField("user_id", isEqualTo: userID)
-            .getDocuments { (accountSnapshot, error) in
-                if let error = error {
-                    print("Error retrieving accounts: \(error.localizedDescription)")
-                } else {
-                    var allTransactions: [Transaction] = []
-                    let group = DispatchGroup()
-                    
-                    for accountDoc in accountSnapshot?.documents ?? [] {
-                        let accountID = accountDoc.documentID
-                        
-                        group.enter()
-                        var query: Query = self.db.collection("accounts").document(accountID).collection("transactions")
-                        
-                        // Apply date filter if startDate is set
-                        if let startDate = startDate {
-                            query = query.whereField("dateTime", isGreaterThanOrEqualTo: startDate)
-                        }
-                        
-                        query.getDocuments { (transactionSnapshot, error) in
-                            if let error = error {
-                                print("Error retrieving transactions: \(error.localizedDescription)")
-                            } else {
-                                for transactionDoc in transactionSnapshot?.documents ?? [] {
-                                    do {
-                                        var transaction = try transactionDoc.data(as: Transaction.self)
-                                        transaction.id = transactionDoc.documentID
-                                        allTransactions.append(transaction)
-                                    } catch {
-                                        print("Error decoding transaction: \(error)")
-                                    }
-                                }
-                            }
-                            group.leave()
-                        }
-                    }
-                    
-                    group.notify(queue: .main) {
-                        // Process transactions to calculate cumulative balance over time
-                        self.processTransactions(allTransactions: allTransactions)
-                    }
-                }
-            }
+        if !predicates.isEmpty {
+            fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+        }
+        
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "dateTime", ascending: true)]
+        
+        do {
+            let transactions = try context.fetch(fetchRequest)
+            self.processTransactions(allTransactions: transactions)
+            // Después de procesar, guardar en la caché
+            saveBalanceDataToCache()
+        } catch {
+            print("Error al obtener transacciones: \(error.localizedDescription)")
+        }
     }
     
-    // Processes transactions to calculate balance over time
-    private func processTransactions(allTransactions: [Transaction]) {
+    private func processTransactions(allTransactions: [TransactionEntity]) {
         if selectedTimeFrame == "1 Day" {
-            // Get starting balance asynchronously
             getStartingBalance(for: Date()) { startingBalance in
                 self.calculateBalanceData(allTransactions: allTransactions, startingBalance: startingBalance)
             }
         } else {
-            // For "Max", start from zero
             self.calculateBalanceData(allTransactions: allTransactions, startingBalance: 0.0)
         }
     }
-
-    private func calculateBalanceData(allTransactions: [Transaction], startingBalance: Double) {
-        // Sort transactions by date
-        let sortedTransactions = allTransactions.sorted(by: { $0.dateTime < $1.dateTime })
+    
+    private func calculateBalanceData(allTransactions: [TransactionEntity], startingBalance: Double) {
+        let sortedTransactions = allTransactions.sorted(by: { ($0.dateTime ?? Date()) < ($1.dateTime ?? Date()) })
         
         var cumulativeBalance: Double = startingBalance
-        var balanceData: [(date: Date, balance: Double)] = []
+        var balanceDataTemp: [(date: Date, balance: Double)] = []
         
         for transaction in sortedTransactions {
-            let amount = Double(transaction.amount)
+            let amount = transaction.amount
             switch transaction.transactionType {
             case "Expense":
-                cumulativeBalance -= amount
+                cumulativeBalance -= Double(amount)
             case "Income":
-                cumulativeBalance += amount
+                cumulativeBalance += Double(amount)
             default:
                 break
             }
             
-            // Determine the date to use based on the time frame
             let date: Date
             switch selectedTimeFrame {
             case "1 Day":
-                // Use the transaction time
-                date = transaction.dateTime
+                date = transaction.dateTime ?? Date()
             case "Max":
-                // Round to the day
-                date = Calendar.current.startOfDay(for: transaction.dateTime)
+                date = Calendar.current.startOfDay(for: transaction.dateTime ?? Date())
             default:
-                date = transaction.dateTime
+                date = transaction.dateTime ?? Date()
             }
             
-            balanceData.append((date: date, balance: cumulativeBalance))
+            balanceDataTemp.append((date: date, balance: cumulativeBalance))
         }
         
-        // Update the published property
         DispatchQueue.main.async {
-            self.balanceData = balanceData
+            self.balanceData = balanceDataTemp
         }
     }
     
-    // Gets the starting balance before the current day for "1 Day" time frame
     private func getStartingBalance(for date: Date, completion: @escaping (Double) -> Void) {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         var cumulativeBalance: Double = 0.0
-        let group = DispatchGroup()
         
-        guard let userID = currentUserID else {
-            print("No authenticated user.")
-            completion(cumulativeBalance)
-            return
-        }
+        let fetchRequest: NSFetchRequest<TransactionEntity> = TransactionEntity.fetchRequest()
+        let datePredicate = NSPredicate(format: "dateTime < %@", startOfDay as NSDate)
+        fetchRequest.predicate = datePredicate
         
-        db.collection("accounts")
-            .whereField("user_id", isEqualTo: userID)
-            .getDocuments { (accountSnapshot, error) in
-                if let error = error {
-                    print("Error retrieving accounts: \(error.localizedDescription)")
-                    completion(cumulativeBalance)
-                } else {
-                    var allTransactions: [Transaction] = []
-                    
-                    for accountDoc in accountSnapshot?.documents ?? [] {
-                        let accountID = accountDoc.documentID
-                        
-                        group.enter()
-                        let query = self.db.collection("accounts").document(accountID).collection("transactions")
-                            .whereField("dateTime", isLessThan: startOfDay)
-                        
-                        query.getDocuments { (transactionSnapshot, error) in
-                            if let error = error {
-                                print("Error retrieving transactions: \(error.localizedDescription)")
-                            } else {
-                                for transactionDoc in transactionSnapshot?.documents ?? [] {
-                                    do {
-                                        var transaction = try transactionDoc.data(as: Transaction.self)
-                                        transaction.id = transactionDoc.documentID
-                                        allTransactions.append(transaction)
-                                    } catch {
-                                        print("Error decoding transaction: \(error)")
-                                    }
-                                }
-                            }
-                            group.leave()
-                        }
-                    }
-                    
-                    group.notify(queue: .main) {
-                        // Calculate cumulative balance up to the start of the day
-                        for transaction in allTransactions {
-                            let amount = Double(transaction.amount)
-                            switch transaction.transactionType {
-                            case "Expense":
-                                cumulativeBalance -= amount
-                            case "Income":
-                                cumulativeBalance += amount
-                            default:
-                                break
-                            }
-                        }
-                        completion(cumulativeBalance)
-                    }
+        do {
+            let transactions = try context.fetch(fetchRequest)
+            for transaction in transactions {
+                let amount = transaction.amount
+                switch transaction.transactionType {
+                case "Expense":
+                    cumulativeBalance -= Double(amount)
+                case "Income":
+                    cumulativeBalance += Double(amount)
+                default:
+                    break
                 }
             }
-    }}
+            completion(cumulativeBalance)
+        } catch {
+            print("Error al obtener transacciones: \(error.localizedDescription)")
+            completion(0.0)
+        }
+    }
+}
