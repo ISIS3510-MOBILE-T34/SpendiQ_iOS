@@ -8,6 +8,7 @@ struct EditTransactionForm: View {
     @State private var selectedAccountID: String = ""
     @State private var selectedEmoji: String = ""
     @State private var selectedDateTime: Date = Date()
+    @StateObject private var locationManager = LocationManager()
     @FocusState private var isEmojiFieldFocused: Bool
     @ObservedObject var bankAccountViewModel: BankAccountViewModel
     @ObservedObject var transactionViewModel: TransactionViewModel
@@ -15,6 +16,43 @@ struct EditTransactionForm: View {
     
     // Only "Expense" and "Income" types
     let transactionTypes = ["Expense", "Income"]
+    
+    
+    private func saveTransactionWithLocation() {
+        guard let location = locationManager.location else {
+            print("Location not available")
+            return
+        }
+        
+        let transactionLocation = Location(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude
+        )
+        
+        guard let amount = Float(amountText) else { return }
+        
+        if let transactionItem = transactionItem {
+            transactionViewModel.updateTransaction(
+                accountID: selectedAccountID,
+                transaction: transactionItem,
+                transactionName: transactionName,
+                amount: amount,
+                transactionType: transactionType,
+                dateTime: selectedDateTime,
+                location: transactionLocation
+            )
+        } else {
+            transactionViewModel.addTransaction(
+                accountID: selectedAccountID,
+                transactionName: transactionName,
+                amount: amount,
+                transactionType: transactionType,
+                dateTime: selectedDateTime,
+                location: transactionLocation
+            )
+        }
+        dismiss()
+    }
     
     var body: some View {
         NavigationView {
@@ -120,31 +158,7 @@ struct EditTransactionForm: View {
                 // Action buttons
                 HStack {
                     // Submit button with validation
-                    Button(action: {
-                        guard let amount = Float(amountText) else { return }
-                        let location = Location(latitude: 0.0, longitude: 0.0)
-                        if let transactionItem = transactionItem {
-                            transactionViewModel.updateTransaction(
-                                accountID: selectedAccountID,
-                                transaction: transactionItem,
-                                transactionName: transactionName,
-                                amount: amount,
-                                transactionType: transactionType,
-                                dateTime: selectedDateTime,
-                                location: location
-                            )
-                        } else {
-                            transactionViewModel.addTransaction(
-                                accountID: selectedAccountID,
-                                transactionName: transactionName,
-                                amount: amount,
-                                transactionType: transactionType,
-                                dateTime: selectedDateTime,
-                                location: location
-                            )
-                        }
-                        dismiss()
-                    }) {
+                    Button(action: saveTransactionWithLocation) {
                         Text(transactionItem != nil ? "Save" : "Accept")
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -204,6 +218,11 @@ struct EditTransactionForm: View {
                     selectedEmoji = selectEmoji(for: transactionType)
                 }
             }
+            
+            if locationManager.location == nil {
+                Text("Obtaining location...")
+                    .foregroundColor(.gray)
+            }
         }
     }
     
@@ -229,6 +248,8 @@ struct EditTransactionForm: View {
             return "❓"
         }
     }
+    
+    
     
     // Function to dismiss the keyboard
     func hideKeyboard() {

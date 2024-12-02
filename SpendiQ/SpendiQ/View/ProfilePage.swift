@@ -1,3 +1,10 @@
+//
+//  ProfilePage.swift
+//  SpendiQ
+//
+//  Created by Daniel Clavijo on 26/10/24.
+//
+
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
@@ -8,6 +15,7 @@ struct ProfilePage: View {
     @Binding var selectedTab: String
     @State private var showDeleteAlert = false
     @State private var showEditProfile = false
+    @State private var showTransactionsMap = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -84,6 +92,14 @@ struct ProfilePage: View {
                         icon: "person.circle",
                         iconColor: Color(hex: "65558F"),
                         text: "Edit Profile"
+                    )
+                }
+                
+                NavigationLink(destination: TransactionsMapView()) {
+                    ProfileRow(
+                        icon: "map",
+                        iconColor: Color(hex: "65558F"),
+                        text: "My Transactions Map"
                     )
                 }
                 
