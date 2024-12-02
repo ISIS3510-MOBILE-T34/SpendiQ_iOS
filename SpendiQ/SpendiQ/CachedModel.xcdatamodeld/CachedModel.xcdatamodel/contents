@@ -20,6 +20,7 @@
         <attribute name="latitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="locationAnomaly" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="longitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="needsSync" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="transactionName" optional="YES" attributeType="String"/>
         <attribute name="transactionType" optional="YES" attributeType="String"/>
     </entity>
