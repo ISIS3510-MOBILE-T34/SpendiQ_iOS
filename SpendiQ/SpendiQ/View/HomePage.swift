@@ -8,6 +8,7 @@ struct HomePage: View {
     @State private var totalExpenses: Double = 0
     @ObservedObject var transactionViewModel: TransactionViewModel
     @ObservedObject private var bankAccountViewModel = BankAccountViewModel()
+    @ObservedObject var balanceViewModel = BalanceViewModel() // Agregado
     @State private var selectedAccountID: String = ""
 
     var body: some View {
@@ -45,9 +46,12 @@ struct HomePage: View {
                     .foregroundColor(.primarySpendiq)
                     .fontWeight(.bold)
                 
-                GraphBox()
-                    .frame(height: 264)
-                    .padding(.bottom, 12)
+                // Enlace de navegación al tocar el gráfico
+                NavigationLink(destination: DetailedGraphView(balanceViewModel: balanceViewModel)) {
+                    GraphBox(balanceViewModel: balanceViewModel) // Pasamos balanceViewModel
+                        .frame(height: 264)
+                        .padding(.bottom, 12)
+                }
                 
                 Divider()
                     .frame(width: 361)
@@ -82,7 +86,7 @@ struct HomePage: View {
             .background(Color.white)
             .onAppear {
                 transactionViewModel.getTransactionsForAllAccounts(accountID: selectedAccountID)
-
+                
                 // Fetch income and expenses for the current month
                 transactionViewModel.calculateMonthlyIncomeAndExpenses { income, expenses in
                     totalIncome = income
