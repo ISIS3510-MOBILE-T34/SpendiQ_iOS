@@ -10,6 +10,8 @@ struct SignUpView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = AuthenticationViewModel()
+    @FocusState private var focusedField: Field?
+    
     
     // MARK: - State Variables
     @State private var firstName = ""
@@ -20,6 +22,16 @@ struct SignUpView: View {
     @State private var showSMSVerificationView = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
+    @State private var showNetworkAlert = false
+    
+    // MARK: - Enums
+    enum Field: Hashable {
+        case firstName
+        case lastName
+        case phone
+        case email
+        case password
+    }
     
     // MARK: - Formatters
     private let dateFormatter: DateFormatter = {
@@ -42,17 +54,19 @@ struct SignUpView: View {
         !viewModel.email.isEmpty &&
         !viewModel.password.isEmpty &&
         agreeToTerms &&
-        viewModel.validateAge(birthDate: birthDate)
+        viewModel.validateAge(birthDate: birthDate) &&
+        viewModel.validateEmail(viewModel.email)
     }
     
     // MARK: - View Components
-    private func formField(title: String, text: Binding<String>, placeholder: String, keyboardType: UIKeyboardType = .default, isSecure: Bool = false, maxLength: Int) -> some View {
+    private func formField(title: String, text: Binding<String>, placeholder: String, keyboardType: UIKeyboardType = .default, isSecure: Bool = false, maxLength: Int, field: Field? = nil) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(title)
                 .font(.custom("SFProText-Regular", size: 18))
             if isSecure {
                 SecureField(placeholder, text: text)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .focused($focusedField, equals: field)
                     .onChange(of: text.wrappedValue) { newValue in
                         if newValue.count > maxLength {
                             text.wrappedValue = String(newValue.prefix(maxLength))
@@ -63,11 +77,50 @@ struct SignUpView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .keyboardType(keyboardType)
                     .autocapitalization(keyboardType == .emailAddress ? .none : .words)
+                    .focused($focusedField, equals: field)
                     .onChange(of: text.wrappedValue) { newValue in
                         if newValue.count > maxLength {
                             text.wrappedValue = String(newValue.prefix(maxLength))
                         }
                     }
+            }
+            
+            // Agregar botón "Done" solo para el campo de teléfono
+            if keyboardType == .phonePad {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        focusedField = nil // Cierra el teclado
+                    }
+                    .foregroundColor(Color(hex: "65558F"))
+                    .padding(.top, 5)
+                }
+            }
+        }
+    }
+    
+    private var networkStatusView: some View {
+        Group {
+            if !viewModel.isConnected {
+                HStack {
+                    Image(systemName: "wifi.slash")
+                        .foregroundColor(.red)
+                    Text("No internet connection")
+                        .font(.custom("SFProText-Regular", size: 14))
+                        .foregroundColor(.red)
+                }
+                .padding(.vertical, 8)
+            }
+            
+            if viewModel.errorMessage?.contains("Connection restored") == true {
+                HStack {
+                    Image(systemName: "wifi")
+                        .foregroundColor(.green)
+                    Text(viewModel.errorMessage ?? "")
+                        .font(.custom("SFProText-Regular", size: 14))
+                        .foregroundColor(.green)
+                }
+                .padding(.vertical, 8)
             }
         }
     }
@@ -91,14 +144,14 @@ struct SignUpView: View {
                 // Form Fields
                 Group {
                     formField(title: "First Name",
-                             text: $firstName,
-                             placeholder: "Enter your first name...",
-                             maxLength: AuthenticationViewModel.ValidationLimits.maxNameLength)
+                              text: $firstName,
+                              placeholder: "Enter your first name...",
+                              maxLength: AuthenticationViewModel.ValidationLimits.maxNameLength)
                     
                     formField(title: "Last Name",
-                             text: $lastName,
-                             placeholder: "Enter your last name...",
-                             maxLength: AuthenticationViewModel.ValidationLimits.maxNameLength)
+                              text: $lastName,
+                              placeholder: "Enter your last name...",
+                              maxLength: AuthenticationViewModel.ValidationLimits.maxNameLength)
                     
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Phone Number")
@@ -107,35 +160,36 @@ struct SignUpView: View {
                             .font(.custom("SFProText-Regular", size: 14))
                             .foregroundColor(.gray)
                         formField(title: "",
-                                text: $viewModel.phoneNumber,
-                                placeholder: "Enter your phone number...",
-                                keyboardType: .phonePad,
-                                maxLength: AuthenticationViewModel.ValidationLimits.maxPhoneLength)
+                                  text: $viewModel.phoneNumber,
+                                  placeholder: "Enter your phone number...",
+                                  keyboardType: .phonePad,
+                                  maxLength: AuthenticationViewModel.ValidationLimits.maxPhoneLength,
+                                  field: .phone)
                     }
                     
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Birth Date")
                             .font(.custom("SFProText-Regular", size: 18))
                         DatePicker("", selection: $birthDate,
-                                 in: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Calendar.current.date(byAdding: .year, value: -18, to: Date())!,
-                                 displayedComponents: .date)
-                            .datePickerStyle(DefaultDatePickerStyle())
-                            .onChange(of: birthDate) { newValue in
-                                viewModel.birthDate = birthDateFormatter.string(from: newValue)
-                            }
+                                   in: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Calendar.current.date(byAdding: .year, value: -18, to: Date())!,
+                                   displayedComponents: .date)
+                        .datePickerStyle(DefaultDatePickerStyle())
+                        .onChange(of: birthDate) { newValue in
+                            viewModel.birthDate = birthDateFormatter.string(from: newValue)
+                        }
                     }
                     
                     formField(title: "Email Address",
-                             text: $viewModel.email,
-                             placeholder: "you@example.com",
-                             keyboardType: .emailAddress,
-                             maxLength: AuthenticationViewModel.ValidationLimits.maxEmailLength)
+                              text: $viewModel.email,
+                              placeholder: "you@example.com",
+                              keyboardType: .emailAddress,
+                              maxLength: AuthenticationViewModel.ValidationLimits.maxEmailLength)
                     
                     formField(title: "Create Password",
-                             text: $viewModel.password,
-                             placeholder: "Create a secure password...",
-                             isSecure: true,
-                             maxLength: AuthenticationViewModel.ValidationLimits.maxPasswordLength)
+                              text: $viewModel.password,
+                              placeholder: "Create a secure password...",
+                              isSecure: true,
+                              maxLength: AuthenticationViewModel.ValidationLimits.maxPasswordLength)
                 }
                 
                 // Terms and Conditions
@@ -151,34 +205,37 @@ struct SignUpView: View {
                     }
                 }
                 
+                // Network Status View
+                networkStatusView
+                
                 // Sign Up Button
                 Button(action: {
-                    if let validationError = viewModel.validateInputs(firstName: firstName, lastName: lastName) {
+                    if let validationError = viewModel.validateSignUpForm(
+                        firstName: firstName,
+                        lastName: lastName,
+                        birthDate: birthDate
+                    ) {
                         errorMessage = validationError
-                        showErrorAlert = true
-                        return
-                    }
-                    
-                    if !viewModel.validateAge(birthDate: birthDate) {
-                        errorMessage = "You must be between \(AuthenticationViewModel.ValidationLimits.minAge) and \(AuthenticationViewModel.ValidationLimits.maxAge) years old"
                         showErrorAlert = true
                         return
                     }
                     
                     viewModel.fullName = "\(firstName.trimmingCharacters(in: .whitespaces)) \(lastName.trimmingCharacters(in: .whitespaces))"
                     viewModel.birthDate = birthDateFormatter.string(from: birthDate)
-                    viewModel.signUp(appState: appState)
-                    showSMSVerificationView = true
+                    
+                    if viewModel.signUp(appState: appState) {
+                        showSMSVerificationView = true
+                    }
                 }) {
                     Text("Sign Up")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(isFormValid ? Color(hex: "65558F") : Color.gray)
+                        .background(isFormValid && viewModel.isConnected ? Color(hex: "65558F") : Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                         .font(.custom("SFProText-Regular", size: 18))
                 }
-                .disabled(!isFormValid)
+                .disabled(!isFormValid || !viewModel.isConnected)
                 .padding(.top, 20)
             }
             .padding(.horizontal, 40)
@@ -199,9 +256,19 @@ struct SignUpView: View {
                 .environmentObject(appState)
                 .environmentObject(viewModel)
         }
+        .onAppear {
+            viewModel.initializeNetworkMonitoring()
+        }
+        .onChange(of: viewModel.isConnected) { isConnected in
+            if isConnected {
+                errorMessage = "Connection restored. You can proceed with sign up."
+            } else {
+                errorMessage = "No internet connection. Please check your connection."
+            }
+            showErrorAlert = true
+        }
     }
 }
-
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
         SignUpView()
