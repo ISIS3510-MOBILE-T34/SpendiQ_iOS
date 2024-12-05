@@ -3,18 +3,18 @@ import Charts
 
 struct DetailedGraphView: View {
     @ObservedObject var balanceViewModel: BalanceViewModel
-    @State private var selectedTimeFrame: String = UserDefaults.standard.string(forKey: "DetailedGraphTimeFrame") ?? "1 Mes"
+    @State private var selectedTimeFrame: String = UserDefaults.standard.string(forKey: "DetailedGraphTimeFrame") ?? "1 Month"
     
-    let timeFrames = ["1 Día", "1 Semana", "1 Mes", "3 Meses", "6 Meses", "1 Año", "Max"]
+    let timeFrames = ["1 Day", "1 Week", "1 Month", "3 Months", "6 Months", "1 Year", "Max"]
     
     var body: some View {
         VStack {
-            Text("Detalles del Balance")
+            Text("Balance details")
                 .font(.title)
                 .padding()
             
             // Selector de marco de tiempo
-            Picker("Marco de Tiempo", selection: $selectedTimeFrame) {
+            Picker("Time range", selection: $selectedTimeFrame) {
                 ForEach(timeFrames, id: \.self) { frame in
                     Text(frame).tag(frame)
                 }
@@ -30,7 +30,7 @@ struct DetailedGraphView: View {
             Chart {
                 ForEach(balanceViewModel.balanceData, id: \.date) { dataPoint in
                     LineMark(
-                        x: .value("Fecha", dataPoint.date),
+                        x: .value("Date", dataPoint.date),
                         y: .value("Balance", dataPoint.balance)
                     )
                     .foregroundStyle(Color.blue.opacity(0.5))
@@ -68,9 +68,9 @@ struct DetailedGraphView: View {
         switch timeFrame {
         case "1 Día":
             formatter.dateFormat = "HH:mm"
-        case "1 Semana", "1 Mes", "3 Meses", "6 Meses":
+        case "1 Week", "1 Month", "3 Months", "6 Months":
             formatter.dateFormat = "dd MMM"
-        case "1 Año", "Max":
+        case "1 year", "Max":
             formatter.dateFormat = "MMM yyyy"
         default:
             formatter.dateFormat = "dd MMM yyyy"
@@ -88,8 +88,8 @@ struct InsightsView: View {
                 .font(.headline)
                 .padding(.bottom, 5)
 
-            Text("Cambio Total de Balance: $\(calculateTotalChange(), specifier: "%.2f")")
-            Text("Balance Diario Promedio: $\(calculateAverageBalance(), specifier: "%.2f")")
+            Text("Total change in Balance: $\(calculateTotalChange(), specifier: "%.2f")")
+            Text("Avarage Daily Balance: $\(calculateAverageBalance(), specifier: "%.2f")")
             // Agrega más insights según sea necesario
         }
         .padding()
