@@ -67,18 +67,32 @@ class BiometricAuthenticationFacade {
     func authenticateUser() -> AnyPublisher<Bool, Error> {
         return Future { promise in
             let context = LAContext()
-            let reason = "Log in to your account"
+            var error: NSError?
             
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,
-                                 localizedReason: reason) { success, error in
+            // Verificar si Face ID está disponible
+            guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+                print("Face ID not available: \(error?.localizedDescription ?? "unknown error")")
+                promise(.failure(BiometricError.notAvailable))
+                return
+            }
+            
+            // Intentar autenticación con Face ID
+            context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: "Log in to your account using Face ID"
+            ) { success, authenticationError in
                 DispatchQueue.main.async {
-                    if let error = error {
-                        print("Face ID authentication error: \(error.localizedDescription)")
-                        promise(.failure(error))
-                        return
+                    if success {
+                        print("Face ID authentication successful")
+                        promise(.success(true))
+                    } else {
+                        if let error = authenticationError {
+                            print("Face ID authentication failed: \(error.localizedDescription)")
+                            promise(.failure(error))
+                        } else {
+                            promise(.failure(BiometricError.authenticationFailed))
+                        }
                     }
-                    print("Face ID authentication success: \(success)")
-                    promise(.success(success))
                 }
             }
         }.eraseToAnyPublisher()

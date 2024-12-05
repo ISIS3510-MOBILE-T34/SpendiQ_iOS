@@ -56,7 +56,6 @@
 		27FF2E512CAE57FA00A7ACB8 /* Exceptions for "SpendiQ" folder in "SpendiQ" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Infos.plist,
 				Services/DataService.swift,
 				View/SpecialOffersAlertView.swift,
 				ViewModel/OfferDetailViewModel.swift,
@@ -479,25 +478,26 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SpendiQ/Preview Content\"";
-				DEVELOPMENT_TEAM = 84BH7BWX4T;
+				DEVELOPMENT_TEAM = BJ3U5G543R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = SpendiQ;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "\"We use Face ID to securely log you into your account\"";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"We need your location to show offers even when the app is not in use.\"";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"We need your location to show nearby offers and shops.\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = "";
-				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ISIS3510.team34;
+				PRODUCT_BUNDLE_IDENTIFIER = ISIS3510.team34.DC25;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -516,25 +516,26 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SpendiQ/Preview Content\"";
-				DEVELOPMENT_TEAM = 84BH7BWX4T;
+				DEVELOPMENT_TEAM = BJ3U5G543R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = SpendiQ;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "\"We use Face ID to securely log you into your account\"";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"We need your location to show offers even when the app is not in use.\"";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"We need your location to show nearby offers and shops.\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = "";
-				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ISIS3510.team34;
+				PRODUCT_BUNDLE_IDENTIFIER = ISIS3510.team34.DC25;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;

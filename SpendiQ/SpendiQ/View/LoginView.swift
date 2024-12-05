@@ -12,13 +12,75 @@ struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = AuthenticationViewModel()
+    
+    // MARK: - State Variables
     @State private var showForgotPassword = false
     @State private var showPrivacy = false
     @State private var showHelp = false
     @State private var canUseBiometrics = false
     @State private var hasSavedCredentials = false
     @State private var showFaceIDError = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
     @State private var faceIDErrorMessage = "Face ID functionality is currently unavailable. Please log in with your email and password."
+    
+    // MARK: - Computed Properties
+    private var isFormValid: Bool {
+        !viewModel.email.isEmpty &&
+        !viewModel.password.isEmpty &&
+        viewModel.email.count <= AuthenticationViewModel.ValidationLimits.maxEmailLength &&
+        viewModel.password.count >= AuthenticationViewModel.ValidationLimits.minPasswordLength &&
+        viewModel.password.count <= AuthenticationViewModel.ValidationLimits.maxPasswordLength &&
+        viewModel.email.contains("@") &&
+        viewModel.email.contains(".")
+    }
+    
+    // MARK: - View Components
+    private func formField(title: String, text: Binding<String>, placeholder: String, keyboardType: UIKeyboardType = .default, isSecure: Bool = false, maxLength: Int) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.custom("SFProText-Regular", size: 18))
+            if isSecure {
+                SecureField(placeholder, text: text)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onChange(of: text.wrappedValue) { newValue in
+                        if newValue.count > maxLength {
+                            text.wrappedValue = String(newValue.prefix(maxLength))
+                        }
+                    }
+            } else {
+                TextField(placeholder, text: text)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(keyboardType)
+                    .autocapitalization(keyboardType == .emailAddress ? .none : .words)
+                    .onChange(of: text.wrappedValue) { newValue in
+                        if newValue.count > maxLength {
+                            text.wrappedValue = String(newValue.prefix(maxLength))
+                        }
+                    }
+            }
+        }
+    }
+    
+    // MARK: - Validation Helper
+    private func validateLoginForm() -> String? {
+        if viewModel.email.isEmpty || viewModel.password.isEmpty {
+            return "Please fill in all fields"
+        }
+        if viewModel.email.count > AuthenticationViewModel.ValidationLimits.maxEmailLength {
+            return "Email must be less than \(AuthenticationViewModel.ValidationLimits.maxEmailLength) characters"
+        }
+        if viewModel.password.count < AuthenticationViewModel.ValidationLimits.minPasswordLength {
+            return "Password must be at least \(AuthenticationViewModel.ValidationLimits.minPasswordLength) characters"
+        }
+        if viewModel.password.count > AuthenticationViewModel.ValidationLimits.maxPasswordLength {
+            return "Password must be less than \(AuthenticationViewModel.ValidationLimits.maxPasswordLength) characters"
+        }
+        if !viewModel.email.contains("@") || !viewModel.email.contains(".") {
+            return "Please enter a valid email address"
+        }
+        return nil
+    }
     
     var body: some View {
         NavigationStack {
@@ -53,6 +115,7 @@ struct LoginView: View {
                 }
                 
                 VStack(spacing: 20) {
+                    // Header section
                     HStack {
                         Button(action: {
                             presentationMode.wrappedValue.dismiss()
@@ -71,23 +134,18 @@ struct LoginView: View {
                         .padding(.top, 50)
                         .padding(.bottom, 30)
                     
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Email")
-                            .font(.custom("SFProText-Regular", size: 18))
-                        TextField("Email...", text: $viewModel.email)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .foregroundColor(Color(hex: "65558F"))
-                    }
+                    // Form fields
+                    formField(title: "Email",
+                             text: $viewModel.email,
+                             placeholder: "Email...",
+                             keyboardType: .emailAddress,
+                             maxLength: AuthenticationViewModel.ValidationLimits.maxEmailLength)
                     
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Password")
-                            .font(.custom("SFProText-Regular", size: 18))
-                        SecureField("Password...", text: $viewModel.password)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .foregroundColor(Color(hex: "65558F"))
-                    }
+                    formField(title: "Password",
+                             text: $viewModel.password,
+                             placeholder: "Password...",
+                             isSecure: true,
+                             maxLength: AuthenticationViewModel.ValidationLimits.maxPasswordLength)
                     
                     HStack {
                         Toggle("", isOn: $viewModel.rememberMe)
@@ -96,40 +154,54 @@ struct LoginView: View {
                             .font(.custom("SFProText-Regular", size: 14))
                     }
                     
+                    // Login button
                     Button(action: {
+                        if let validationError = validateLoginForm() {
+                            errorMessage = validationError
+                            showErrorAlert = true
+                            return
+                        }
                         viewModel.login(appState: appState)
                     }) {
                         Text("Log In")
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color(hex: "65558F"))
+                            .background(isFormValid ? Color(hex: "65558F") : Color.gray)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                             .font(.custom("SFProText-Regular", size: 18))
                     }
+                    .disabled(!isFormValid)
                     .padding(.top, 20)
                     
-                    Group {
-                        if canUseBiometrics && hasSavedCredentials && !appState.isFirstLogin {
-                            Button(action: {
-                                showFaceIDError = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "faceid")
-                                        .foregroundColor(.white)
-                                    Text("Log in with Face ID")
-                                        .foregroundColor(.white)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(hex: "65558F"))
-                                .cornerRadius(10)
-                                .font(.custom("SFProText-Regular", size: 18))
+
+                    // Face ID button
+                    if canUseBiometrics && hasSavedCredentials {
+                        Button(action: {
+                            viewModel.loginWithFaceID(appState: appState)
+                        }) {
+                            HStack {
+                                Image(systemName: "faceid")
+                                    .foregroundColor(.white)
+                                Text("Log in with Face ID")
+                                    .foregroundColor(.white)
                             }
-                            .padding(.top, 10)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(hex: "65558F"))
+                            .cornerRadius(10)
+                            .font(.custom("SFProText-Regular", size: 18))
+                        }
+                        .disabled(viewModel.isLoading)
+                        .overlay {
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            }
                         }
                     }
                     
+                    // Forgot password button
                     Button(action: {
                         showForgotPassword = true
                     }) {
@@ -139,6 +211,7 @@ struct LoginView: View {
                     }
                     .padding(.top, 10)
                     
+                    // Error message
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
                             .foregroundColor(.red)
@@ -147,6 +220,7 @@ struct LoginView: View {
                     
                     Spacer()
                     
+                    // Footer
                     HStack {
                         Button(action: {
                             showPrivacy = true
@@ -178,13 +252,18 @@ struct LoginView: View {
             .sheet(isPresented: $showHelp) {
                 HelpView()
             }
+            .alert("Error", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
             .alert("Face ID", isPresented: $showFaceIDError) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(faceIDErrorMessage)
             }
             .onAppear {
-                // Solo verificamos biométricos si no es el primer login
+                viewModel.initializeNetworkMonitoring()
                 if !appState.isFirstLogin {
                     checkBiometricAvailability()
                     checkSavedCredentials()
@@ -193,28 +272,61 @@ struct LoginView: View {
         }
     }
     
+    // Agregar esta vista al LoginView, justo después del botón de login
+        private var networkStatusView: some View {
+            Group {
+                if !viewModel.isNetworkAvailable {
+                    HStack {
+                        Image(systemName: "wifi.slash")
+                            .foregroundColor(.red)
+                        Text("No internet connection")
+                            .font(.custom("SFProText-Regular", size: 14))
+                            .foregroundColor(.red)
+                    }
+                    .padding(.vertical, 8)
+                }
+                
+                if viewModel.errorMessage?.contains("Connection restored") == true {
+                    HStack {
+                        Image(systemName: "wifi")
+                            .foregroundColor(.green)
+                        Text(viewModel.errorMessage ?? "")
+                            .font(.custom("SFProText-Regular", size: 14))
+                            .foregroundColor(.green)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+        }
+        
+
+    
+    // MARK: - Helper Methods
     private func checkBiometricAvailability() {
-        print("Checking biometric availability")
         let context = LAContext()
         var error: NSError?
         
         DispatchQueue.main.async {
-            canUseBiometrics = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-            print("Face ID available: \(canUseBiometrics)")
+            let canUseBiometrics = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+            print("Can use biometrics: \(canUseBiometrics)")
             if let error = error {
-                print("Face ID error: \(error.localizedDescription)")
-                canUseBiometrics = false
+                print("Biometric error: \(error.localizedDescription)")
+            }
+            self.canUseBiometrics = canUseBiometrics
+            
+            // Si podemos usar biométricos, verificamos credenciales guardadas
+            if canUseBiometrics {
+                self.checkSavedCredentials()
             }
         }
     }
     
     private func checkSavedCredentials() {
-        print("Checking for saved credentials")
         let facade = BiometricAuthenticationFacade()
         facade.hasSavedCredentials()
             .receive(on: DispatchQueue.main)
             .sink { hasCredentials in
-                print("Has saved credentials check result: \(hasCredentials)")
+                print("Has saved credentials: \(hasCredentials)")
                 self.hasSavedCredentials = hasCredentials
             }
             .store(in: &viewModel.cancellables)

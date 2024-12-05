@@ -18,7 +18,12 @@ class AuthenticationViewModel: ObservableObject {
     @Published var smsCode: String = ""
     @Published var isVerificationSent: Bool = false
     @Published var isLoading = false
-    @Published var rememberMe = false 
+    @Published var rememberMe = false
+    @Published var isNetworkAvailable = true
+    @Published var retryAttempts = 0
+    @Published var isConnected: Bool = true
+    private let maxRetryAttempts = 3
+    var networkMonitor: NetworkMonitor?
 
     var cancellables = Set<AnyCancellable>()
     private let authService: AuthenticationServiceProtocol
@@ -29,27 +34,66 @@ class AuthenticationViewModel: ObservableObject {
         self.authService = authService
     }
     
-    func login(appState: AppState) {
-        guard !isLoading else { return }
-        isLoading = true
-        errorMessage = nil
+    
+
+    
+    func validateEmail(_ email: String) -> Bool {
+        let emailRegex = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
+    }
+    
+    func validateSignUpForm(firstName: String, lastName: String, birthDate: Date) -> String? {
+        if !(networkMonitor?.isConnected ?? false) {
+            return "Internet connection is required. Please check your connection."
+        }
         
+        if let basicValidation = validateInputs(firstName: firstName, lastName: lastName) {
+            return basicValidation
+        }
+        
+        if !validateAge(birthDate: birthDate) {
+            return "You must be between \(ValidationLimits.minAge) and \(ValidationLimits.maxAge) years old"
+        }
+        
+        if !validateEmail(email) {
+            return "Please enter a valid email address"
+        }
+        
+        return nil
+    }
+    
+    func initializeNetworkMonitoring() {
+        networkMonitor = NetworkMonitor()
+        // Observar los cambios en isConnected del NetworkMonitor
+        networkMonitor?.$isConnected
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] connected in
+                self?.isConnected = connected
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func performLogin(appState: AppState) {
         authService.login(email: email, password: password)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 guard let self = self else { return }
                 self.isLoading = false
+                
                 if case .failure(let error) = completion {
-                    self.errorMessage = error.localizedDescription
+                    self.handleLoginError(error, appState: appState)
                 }
             } receiveValue: { [weak self] success in
                 guard let self = self else { return }
+                self.isLoading = false
+                self.retryAttempts = 0
+                
                 if success {
                     if self.rememberMe {
                         self.saveCredentialsForBiometric()
                     }
                     appState.isAuthenticated = true
-                    // Marcamos que ya no es el primer login
                     appState.completeFirstLogin()
                     self.errorMessage = nil
                 } else {
@@ -59,7 +103,7 @@ class AuthenticationViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    func signUp(appState: AppState) {
+    private func performSignUp(appState: AppState) {
         authService.signUp(
             email: email,
             password: password,
@@ -69,14 +113,132 @@ class AuthenticationViewModel: ObservableObject {
         )
         .receive(on: DispatchQueue.main)
         .sink { [weak self] completion in
+            guard let self = self else { return }
+            self.isLoading = false
+            
             switch completion {
             case .finished:
-                self?.sendVerificationCode()
+                self.retryAttempts = 0
+                self.sendVerificationCode()
             case .failure(let error):
-                self?.errorMessage = error.localizedDescription
+                self.handleSignUpError(error, appState: appState)
             }
         } receiveValue: { _ in }
         .store(in: &cancellables)
+    }
+    
+    private func handleSignUpError(_ error: Error, appState: AppState) {
+        if let networkError = error as? URLError {
+            switch networkError.code {
+            case .notConnectedToInternet, .networkConnectionLost:
+                if retryAttempts < maxRetryAttempts {
+                    retryAttempts += 1
+                    errorMessage = "Connection lost. Retrying... (Attempt \(retryAttempts)/\(maxRetryAttempts))"
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                        self?.signUp(appState: appState)
+                    }
+                } else {
+                    errorMessage = "Unable to connect after several attempts. Please try again later."
+                }
+            default:
+                errorMessage = error.localizedDescription
+            }
+        } else {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func handleLoginError(_ error: Error, appState: AppState) {
+        if let networkError = error as? URLError {
+            switch networkError.code {
+            case .notConnectedToInternet, .networkConnectionLost:
+                if retryAttempts < maxRetryAttempts {
+                    retryAttempts += 1
+                    errorMessage = "Connection lost. Retrying... (Attempt \(retryAttempts)/\(maxRetryAttempts))"
+                    
+                    // Esperar 2 segundos antes de reintentar
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                        self?.login(appState: appState)
+                    }
+                } else {
+                    errorMessage = "Unable to connect after several attempts. Please try again later."
+                }
+            default:
+                errorMessage = error.localizedDescription
+            }
+        } else {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func handleNoConnection(appState: AppState) {
+        isLoading = false
+        errorMessage = "No internet connection. Please check your connection and try again."
+        
+        // Suscribirse a cambios en la conexión
+        networkMonitor?.$isConnected
+            .dropFirst() // Ignorar el valor inicial
+            .filter { $0 } // Solo nos interesa cuando la conexión se restaura
+            .first() // Tomar solo el primer evento de reconexión
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                self.errorMessage = "Connection restored. You can try logging in again."
+            }
+            .store(in: &cancellables)
+    }
+    
+    func login(appState: AppState) {
+        guard !isLoading else { return }
+        isLoading = true
+        errorMessage = nil
+        
+        // Verificar conexión de red
+        guard networkMonitor?.isConnected == true else {
+            handleNoConnection(appState: appState)
+            return
+        }
+        
+        performLogin(appState: appState)
+    }
+    
+    deinit {
+        networkMonitor?.stopMonitoring()
+    }
+    
+    func signUp(appState: AppState) -> Bool {
+        guard !isLoading else { return false }
+        guard networkMonitor?.isConnected ?? false else {
+            errorMessage = "No internet connection. Please check your connection and try again."
+            return false
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        authService.signUp(
+            email: email,
+            password: password,
+            fullName: fullName,
+            phoneNumber: phoneNumber,
+            birthDate: birthDate
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] completion in
+            guard let self = self else { return }
+            self.isLoading = false
+            
+            switch completion {
+            case .finished:
+                self.retryAttempts = 0
+                self.sendVerificationCode()
+            case .failure(let error):
+                self.handleSignUpError(error, appState: appState)
+            }
+        } receiveValue: { _ in }
+        .store(in: &cancellables)
+        
+        return true
     }
 
     func sendVerificationCode() {
@@ -156,43 +318,21 @@ class AuthenticationViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // 1. Primero verificar si el dispositivo puede usar Face ID
-        guard biometricAuth.canUseBiometrics() else {
-            print("Device cannot use Face ID")
-            isLoading = false
-            errorMessage = "Face ID is not available on this device"
-            return
-        }
-        
-        // 2. Intentar autenticar con Face ID
-        biometricAuth.authenticateUser()
-            .handleEvents(
-                receiveSubscription: { _ in
-                    print("Starting Face ID authentication")
-                },
-                receiveOutput: { success in
-                    print("Face ID authentication result: \(success)")
-                }
-            )
-            .flatMap { success -> AnyPublisher<(String, String)?, Error> in
-                guard success else {
-                    print("Face ID authentication failed")
-                    return Fail(error: BiometricError.authenticationFailed).eraseToAnyPublisher()
-                }
-                print("Retrieving saved credentials")
-                return self.biometricAuth.retrieveBiometricCredentials()
-            }
-            .handleEvents(
-                receiveOutput: { credentials in
-                    print("Retrieved credentials: \(credentials != nil)")
-                }
-            )
-            .flatMap { credentials -> AnyPublisher<Bool, Error> in
-                guard let (email, password) = credentials else {
-                    print("No credentials found")
+        // Primero verificar si hay credenciales guardadas
+        biometricAuth.hasSavedCredentials()
+            .flatMap { hasCreds -> AnyPublisher<Bool, Error> in
+                if !hasCreds {
                     return Fail(error: BiometricError.noCredentialsStored).eraseToAnyPublisher()
                 }
-                print("Attempting Firebase login with saved credentials")
+                return self.biometricAuth.authenticateUser()
+            }
+            .flatMap { _ in
+                self.biometricAuth.retrieveBiometricCredentials()
+            }
+            .flatMap { credentials -> AnyPublisher<Bool, Error> in
+                guard let (email, password) = credentials else {
+                    return Fail(error: BiometricError.noCredentialsStored).eraseToAnyPublisher()
+                }
                 return self.authService.signInWithSavedCredentials(email: email, password: password)
             }
             .receive(on: DispatchQueue.main)
@@ -200,10 +340,7 @@ class AuthenticationViewModel: ObservableObject {
                 guard let self = self else { return }
                 self.isLoading = false
                 
-                switch completion {
-                case .finished:
-                    print("Face ID login process completed")
-                case .failure(let error):
+                if case .failure(let error) = completion {
                     print("Face ID login error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                 }
@@ -215,8 +352,7 @@ class AuthenticationViewModel: ObservableObject {
                     print("Successfully logged in with Face ID")
                     appState.isAuthenticated = true
                 } else {
-                    print("Face ID login failed without error")
-                    self.errorMessage = "Authentication failed"
+                    self.errorMessage = "Face ID authentication failed"
                 }
             }
             .store(in: &cancellables)
