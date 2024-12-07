@@ -1,10 +1,14 @@
+// BalanceViewModel.swift
+
 import Foundation
 import CoreData
 
 class BalanceViewModel: ObservableObject {
     @Published var balanceData: [(date: Date, balance: Double)] = []
+    @Published var currentTransactions: [TransactionEntity] = []
+    
     private let context = PersistenceController.shared.container.viewContext
-    var selectedTimeFrame: String = "1 Day"
+    var selectedTimeFrame: String = "1 Día"
     
     init() {
         loadCachedBalanceData()
@@ -61,24 +65,51 @@ class BalanceViewModel: ObservableObject {
     func fetchBalanceData(timeFrame: String) {
         self.selectedTimeFrame = timeFrame
         
-        // Obtener transacciones desde la caché (TransactionEntity)
         let fetchRequest: NSFetchRequest<TransactionEntity> = TransactionEntity.fetchRequest()
         let calendar = Calendar.current
         var predicates: [NSPredicate] = []
         
         // Definir el predicado según el marco de tiempo seleccionado
         switch timeFrame {
-        case "1 Day":
-            let startOfDay = calendar.startOfDay(for: Date())
-            let datePredicate = NSPredicate(format: "dateTime >= %@", startOfDay as NSDate)
-            predicates.append(datePredicate)
+        case "1 Día":
+            if let startDate = calendar.date(byAdding: .day, value: -1, to: Date()) {
+                let datePredicate = NSPredicate(format: "dateTime >= %@", startDate as NSDate)
+                predicates.append(datePredicate)
+            }
+        case "1 Semana":
+            if let startDate = calendar.date(byAdding: .day, value: -7, to: Date()) {
+                let datePredicate = NSPredicate(format: "dateTime >= %@", startDate as NSDate)
+                predicates.append(datePredicate)
+            }
+        case "1 Mes":
+            if let startDate = calendar.date(byAdding: .month, value: -1, to: Date()) {
+                let datePredicate = NSPredicate(format: "dateTime >= %@", startDate as NSDate)
+                predicates.append(datePredicate)
+            }
+        case "3 Meses":
+            if let startDate = calendar.date(byAdding: .month, value: -3, to: Date()) {
+                let datePredicate = NSPredicate(format: "dateTime >= %@", startDate as NSDate)
+                predicates.append(datePredicate)
+            }
+        case "6 Meses":
+            if let startDate = calendar.date(byAdding: .month, value: -6, to: Date()) {
+                let datePredicate = NSPredicate(format: "dateTime >= %@", startDate as NSDate)
+                predicates.append(datePredicate)
+            }
+        case "1 Año":
+            if let startDate = calendar.date(byAdding: .year, value: -1, to: Date()) {
+                let datePredicate = NSPredicate(format: "dateTime >= %@", startDate as NSDate)
+                predicates.append(datePredicate)
+            }
         case "Max":
             // No se aplica filtro de fecha
             break
         default:
-            let startOfDay = calendar.startOfDay(for: Date())
-            let datePredicate = NSPredicate(format: "dateTime >= %@", startOfDay as NSDate)
-            predicates.append(datePredicate)
+            // Por defecto, 1 Mes
+            if let startDate = calendar.date(byAdding: .month, value: -1, to: Date()) {
+                let datePredicate = NSPredicate(format: "dateTime >= %@", startDate as NSDate)
+                predicates.append(datePredicate)
+            }
         }
         
         if !predicates.isEmpty {
@@ -98,13 +129,15 @@ class BalanceViewModel: ObservableObject {
     }
     
     private func processTransactions(allTransactions: [TransactionEntity]) {
-        if selectedTimeFrame == "1 Day" {
+        if selectedTimeFrame == "1 Día" {
             getStartingBalance(for: Date()) { startingBalance in
                 self.calculateBalanceData(allTransactions: allTransactions, startingBalance: startingBalance)
             }
         } else {
             self.calculateBalanceData(allTransactions: allTransactions, startingBalance: 0.0)
         }
+        // Guardamos las transacciones actuales para calcular insights
+        self.currentTransactions = allTransactions
     }
     
     private func calculateBalanceData(allTransactions: [TransactionEntity], startingBalance: Double) {
@@ -126,7 +159,7 @@ class BalanceViewModel: ObservableObject {
             
             let date: Date
             switch selectedTimeFrame {
-            case "1 Day":
+            case "1 Día":
                 date = transaction.dateTime ?? Date()
             case "Max":
                 date = Calendar.current.startOfDay(for: transaction.dateTime ?? Date())

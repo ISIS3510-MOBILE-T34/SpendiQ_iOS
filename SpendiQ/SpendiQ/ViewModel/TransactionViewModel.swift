@@ -55,16 +55,13 @@ class TransactionViewModel: ObservableObject {
 
     
     func calculateMonthlyIncomeAndExpenses(completion: @escaping (Double, Double) -> Void) {
-        // Sprint 3 - Alonso: Check local storage first
-        if let snapshot = loadMonthlySnapshot() {
-            completion(snapshot.income, snapshot.expenses)
-            return
-        }
+        // Cargar snapshot local como fallback, pero no retornar de inmediato
+        let localSnapshot = loadMonthlySnapshot()
 
-        // Sprint 3 - Alonso: No valid snapshot found, fetch from Firestore
         guard let userID = currentUserID else {
             print("No authenticated user.")
-            completion(0, 0)
+            // Si no hay usuario autenticado, usar el snapshot local o valores por defecto
+            completion(localSnapshot?.income ?? 0, localSnapshot?.expenses ?? 0)
             return
         }
 
@@ -73,13 +70,15 @@ class TransactionViewModel: ObservableObject {
             .getDocuments { (querySnapshot, error) in
                 if let error = error {
                     print("Error retrieving accounts: \(error.localizedDescription)")
-                    completion(0, 0)
+                    // Si falla la obtención desde Firestore, usar el snapshot local si existe
+                    completion(localSnapshot?.income ?? 0, localSnapshot?.expenses ?? 0)
                     return
                 }
 
-                guard let documents = querySnapshot?.documents else {
+                guard let documents = querySnapshot?.documents, !documents.isEmpty else {
                     print("No accounts found.")
-                    completion(0, 0)
+                    // Si no hay cuentas en Firestore, usar el snapshot local si existe
+                    completion(localSnapshot?.income ?? 0, localSnapshot?.expenses ?? 0)
                     return
                 }
 
@@ -92,7 +91,6 @@ class TransactionViewModel: ObservableObject {
 
                 for document in documents {
                     let accountID = document.documentID
-
                     group.enter()
                     self.db.collection("accounts").document(accountID).collection("transactions").getDocuments { (transactionSnapshot, transactionError) in
                         if let transactionError = transactionError {
@@ -124,7 +122,9 @@ class TransactionViewModel: ObservableObject {
 
                 group.notify(queue: .main) {
                     print("Sprint 3 - Alonso: Fetched monthly totals from Firestore. Income: \(totalIncome), Expenses: \(totalExpenses)")
+                    // Guardar nuevos datos en snapshot local
                     self.saveMonthlySnapshot(income: totalIncome, expenses: totalExpenses)
+                    // Retornar los datos más recientes
                     completion(totalIncome, totalExpenses)
                 }
             }
