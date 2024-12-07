@@ -1,8 +1,12 @@
+// BalanceViewModel.swift
+
 import Foundation
 import CoreData
 
 class BalanceViewModel: ObservableObject {
     @Published var balanceData: [(date: Date, balance: Double)] = []
+    @Published var currentTransactions: [TransactionEntity] = []
+    
     private let context = PersistenceController.shared.container.viewContext
     var selectedTimeFrame: String = "1 Día"
     
@@ -132,6 +136,8 @@ class BalanceViewModel: ObservableObject {
         } else {
             self.calculateBalanceData(allTransactions: allTransactions, startingBalance: 0.0)
         }
+        // Guardamos las transacciones actuales para calcular insights
+        self.currentTransactions = allTransactions
     }
     
     private func calculateBalanceData(allTransactions: [TransactionEntity], startingBalance: Double) {

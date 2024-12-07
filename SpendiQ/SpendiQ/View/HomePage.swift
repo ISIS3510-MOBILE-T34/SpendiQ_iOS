@@ -47,7 +47,7 @@ struct HomePage: View {
                     .fontWeight(.bold)
                 
                 // Enlace de navegación al tocar el gráfico
-                NavigationLink(destination: DetailedGraphView(balanceViewModel: balanceViewModel)) {
+                NavigationLink(destination: DetailedGraphView(balanceViewModel: balanceViewModel, transactionViewModel: transactionViewModel)) {
                     GraphBox(balanceViewModel: balanceViewModel) // Pasamos balanceViewModel
                         .frame(height: 264)
                         .padding(.bottom, 12)
